@@ -18,3 +18,82 @@
 # module call in environments/dev/main.tf.
 
 # TODO: implement the two resources above.
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  required_version = ">= 1.5.0"
+}
+
+# provider "aws" {
+#   region = "us-east-1"
+# }
+
+# ------------------------------------------------------------
+# SageMaker Domain
+# ------------------------------------------------------------
+
+resource "aws_sagemaker_domain" "this" {
+  domain_name = "${var.project}-${var.environment}-domain"
+
+  auth_mode = "IAM"
+
+  vpc_id                  = var.vpc_id
+  subnet_ids              = var.subnet_ids
+  app_network_access_type = "VpcOnly"
+
+  retention_policy {
+    home_efs_file_system = "Delete"
+  }
+
+  default_user_settings {
+    execution_role = var.execution_role_arn
+
+    security_groups = var.security_group_ids
+
+    sharing_settings {
+      notebook_output_option = "Disabled"
+    }
+  }
+
+  default_space_settings {
+    execution_role = var.execution_role_arn
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-domain"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+# ------------------------------------------------------------
+# SageMaker User Profile
+# ------------------------------------------------------------
+
+resource "aws_sagemaker_user_profile" "ml_engineer" {
+  domain_id         = aws_sagemaker_domain.this.id
+  user_profile_name = "MLEngineer"
+
+  user_settings {
+    execution_role = var.execution_role_arn
+
+    security_groups = var.security_group_ids
+
+    default_landing_uri = "app:JupyterServer:"
+
+    sharing_settings {
+      notebook_output_option = "Disabled"
+    }
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-MLEngineer"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
