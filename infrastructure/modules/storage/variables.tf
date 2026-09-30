@@ -15,3 +15,9 @@ variable "prefixes" {
   type        = list(string)
   default     = ["raw/", "processed/", "features/", "artifacts/"]
 }
+
+variable "enable_lifecycle_rules" {
+  description = "Whether to configure lifecycle expiration rules for bucket data"
+  type        = bool
+  default     = true
+}

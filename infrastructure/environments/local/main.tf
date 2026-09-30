@@ -14,9 +14,10 @@ module "vpc" {
 }
 
 module "storage" {
-  source      = "../../modules/storage"
-  project     = var.project
-  environment = var.environment
+  source                 = "../../modules/storage"
+  project                = var.project
+  environment            = var.environment
+  enable_lifecycle_rules = false
 }
 
 module "iam" {
