@@ -7,9 +7,10 @@
 # terraform validate still passes — an empty module is a valid module.
 
 module "vpc" {
-  source      = "../../modules/vpc"
-  project     = var.project
-  environment = var.environment
+  source             = "../../modules/vpc"
+  project            = var.project
+  environment        = var.environment
+  enable_nat_gateway = false
 }
 
 module "storage" {

@@ -27,3 +27,9 @@ variable "availability_zone" {
   type        = string
   default     = "us-east-1a"
 }
+
+variable "enable_nat_gateway" {
+  description = "Whether to create a NAT Gateway and its Elastic IP for private subnet internet access"
+  type        = bool
+  default     = true
+}
