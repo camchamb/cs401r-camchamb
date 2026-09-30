@@ -1,0 +1,4 @@
+(.venv) camer@CameronsLaptop:/mnt/c/Users/camer/dev/cs401r-camchamb$ python3 docs/lab3/test2.py 
+PASS  Titan embeddings        dim=1024
+PASS  Claude Haiku 4.5        'OK'
+(.venv) camer@CameronsLaptop:/mnt/c/Users/camer/dev/cs401r-camchamb$ 

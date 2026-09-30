@@ -1,0 +1,42 @@
+PS C:\Users\camer> aws service-quotas get-aws-default-service-quota --service-code sagemaker --quota-code L-611FA074
+{
+    "Quota": {
+        "ServiceCode": "sagemaker",
+        "ServiceName": "Amazon SageMaker",
+        "QuotaArn": "arn:aws:servicequotas:us-east-1::sagemaker/L-611FA074",
+        "QuotaCode": "L-611FA074",
+        "QuotaName": "ml.m5.large for training job usage",
+        "Value": 0.0,
+        "Unit": "None",
+        "Adjustable": true,
+        "GlobalQuota": false,
+        "UsageMetric": {
+            "MetricNamespace": "AWS/Usage",
+            "MetricName": "ResourceCount",
+            "MetricDimensions": {
+                "Class": "None",
+                "Resource": "training-job/ml.m5.large",
+                "Service": "SageMaker",
+                "Type": "Resource"
+            },
+            "MetricStatisticRecommendation": "Maximum"
+        },
+        "Period": {
+            "PeriodValue": 1,
+            "PeriodUnit": "HOUR"
+        },
+        "Description": "ml.m5.large for training job usage"
+    }
+}
+
+PS C:\Users\camer> aws service-quotas get-service-quota --service-code sagemaker --quota-code L-611FA074 --query "Quota.{Name:QuotaName,Applied:Value}" --output json
+{
+    "Name": "ml.m5.large for training job usage",
+    "Applied": 15.0
+}
+
+PS C:\Users\camer> aws service-quotas get-service-quota ` --service-code sagemaker ` --quota-code L-611FA074 ` --query "Quota.Value" ` --output text
+15.0
+
+
+My account already had 15 applied. I didn't make any changes. 
