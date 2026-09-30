@@ -175,3 +175,156 @@ resource "aws_iam_role_policy" "ml_engineer" {
     ]
   })
 }
+
+# ------------------------------------------------------------
+# Data Engineer IAM Role
+# ------------------------------------------------------------
+
+resource "aws_iam_role" "data_engineer" {
+  name = "${var.project}-${var.environment}-DataEngineer"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = [
+          "glue.amazonaws.com",
+          "lambda.amazonaws.com",
+          "sagemaker.amazonaws.com"
+        ]
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-DataEngineer"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+resource "aws_iam_role_policy" "data_engineer" {
+  name = "${var.project}-${var.environment}-DataEngineerPolicy"
+  role = aws_iam_role.data_engineer.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Sid    = "S3DataPrefixes"
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Resource = [
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/raw/*",
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/processed/*",
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/features/*"
+        ]
+      },
+      {
+        Sid      = "ReadGlueArtifacts"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*/artifacts/glue/*"
+      },
+      {
+        Sid      = "ListDataBucket"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket", "s3:GetBucketLocation"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*"
+      },
+      {
+        Sid    = "GlueCatalogAndJobs"
+        Effect = "Allow"
+        Action = [
+          "glue:CreateDatabase", "glue:GetDatabase", "glue:GetDatabases",
+          "glue:CreateTable", "glue:GetTable", "glue:GetTables", "glue:UpdateTable", "glue:DeleteTable",
+          "glue:GetPartition", "glue:GetPartitions", "glue:CreatePartition", "glue:BatchCreatePartition",
+          "glue:UpdatePartition", "glue:DeletePartition", "glue:BatchDeletePartition",
+          "glue:StartJobRun", "glue:GetJobRun", "glue:GetJobRuns"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid      = "FeatureStoreIngestion"
+        Effect   = "Allow"
+        Action   = ["sagemaker:DescribeFeatureGroup", "sagemaker-featurestore-runtime:PutRecord"]
+        Resource = "*"
+      },
+      {
+        Sid    = "GlueVpcNetworking"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateNetworkInterface", "ec2:DeleteNetworkInterface", "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeVpcs", "ec2:DescribeSubnets", "ec2:DescribeSecurityGroups"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid      = "GlueLogs"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:*:*:log-group:/aws-glue/*"
+      }
+    ]
+  })
+}
+
+# ------------------------------------------------------------
+# Model Monitor IAM Role
+# ------------------------------------------------------------
+
+resource "aws_iam_role" "model_monitor" {
+  name = "${var.project}-${var.environment}-ModelMonitor"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "sagemaker.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-ModelMonitor"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+resource "aws_iam_role_policy" "model_monitor" {
+  name = "${var.project}-${var.environment}-ModelMonitorPolicy"
+  role = aws_iam_role.model_monitor.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Sid      = "MonitoringSchedules"
+        Effect   = "Allow"
+        Action   = ["sagemaker:CreateMonitoringSchedule", "sagemaker:DescribeMonitoringSchedule", "sagemaker:ListMonitoringSchedules", "sagemaker:UpdateMonitoringSchedule", "sagemaker:DeleteMonitoringSchedule"]
+        Resource = "*"
+      },
+      {
+        Sid      = "MonitoringMetrics"
+        Effect   = "Allow"
+        Action   = ["cloudwatch:PutMetricData"]
+        Resource = "*"
+      },
+      {
+        Sid      = "MonitoringLogs"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:*:*:log-group:/aws/sagemaker/*"
+      }
+    ]
+  })
+}

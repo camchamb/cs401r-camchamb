@@ -8,7 +8,7 @@ bash scripts/bootstrap-state.sh
 cd infrastructure/environments/dev
 terraform init
 terraform plan
-terraform apply 2>&1 | tee ../../../docs/lab1b-apply-output.txt
+terraform apply 2>&1 | tee ../../../docs/lab2b-apply-output.txt
 
 
 # Test
