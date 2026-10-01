@@ -63,8 +63,30 @@ def cast_types(df):
     key for every downstream feature, so a row without it cannot be
     attributed to anyone.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("cast_types is not implemented")
+    # Normalize whitespace and represent empty strings consistently as null.
+    # Crawler-created CSV columns are strings, but casting to string here keeps
+    # this safe if the crawler later infers a different source type.
+    for column in df.columns:
+        normalized = F.trim(F.col(column).cast("string"))
+        df = df.withColumn(
+            column,
+            F.when(normalized == "", F.lit(None)).otherwise(normalized),
+        )
+
+    # Dates have two supported input formats; all remaining fields use the
+    # declared target type directly.
+    df = df.withColumn(
+        "purchase_date",
+        F.coalesce(
+            F.to_date(F.col("purchase_date"), "yyyy-MM-dd"),
+            F.to_date(F.col("purchase_date"), "MM/dd/yyyy"),
+        ),
+    )
+    for column, data_type in SCHEMA.items():
+        if column != "purchase_date":
+            df = df.withColumn(column, F.col(column).cast(data_type))
+
+    return df.dropna(subset=["customer_id"])
 
 
 def impute_nulls(df):
@@ -79,8 +101,16 @@ def impute_nulls(df):
 
     Numeric columns: NUMERIC_COLS.  String columns: STRING_COLS.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("impute_nulls is not implemented")
+    fill_values = {}
+    for column in NUMERIC_COLS:
+        median = df.approxQuantile(column, [0.5], 0.0)
+        # A fully-null source column has no median. Zero is an explicit,
+        # deterministic fallback rather than leaving nulls downstream.
+        value = median[0] if median else 0
+        fill_values[column] = int(round(value)) if column == "num_items" else value
+
+    df = df.fillna(fill_values)
+    return df.fillna("unknown", subset=STRING_COLS)
 
 
 def deduplicate(df):
@@ -101,8 +131,15 @@ def deduplicate(df):
     A window function with row_number() over a partition by transaction_id
     is the idiomatic approach.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("deduplicate is not implemented")
+    transaction_window = Window.partitionBy("transaction_id").orderBy(
+        F.col("purchase_date").desc_nulls_last(),
+        F.col("order_value").desc_nulls_last(),
+    )
+    return (
+        df.withColumn("_transaction_rank", F.row_number().over(transaction_window))
+        .filter(F.col("_transaction_rank") == 1)
+        .drop("_transaction_rank")
+    )
 
 
 def main():

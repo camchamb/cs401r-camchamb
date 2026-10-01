@@ -243,8 +243,8 @@ resource "aws_iam_role_policy" "data_engineer" {
           "glue:CreateDatabase", "glue:GetDatabase", "glue:GetDatabases",
           "glue:CreateTable", "glue:GetTable", "glue:GetTables", "glue:UpdateTable", "glue:DeleteTable",
           "glue:GetPartition", "glue:GetPartitions", "glue:CreatePartition", "glue:BatchCreatePartition",
-          "glue:UpdatePartition", "glue:DeletePartition", "glue:BatchDeletePartition",
-          "glue:StartJobRun", "glue:GetJobRun", "glue:GetJobRuns"
+          "glue:UpdatePartition", "glue:DeletePartition", "glue:BatchDeletePartition", "ec2:DescribeRouteTables",
+          "glue:StartJobRun", "glue:GetJobRun", "glue:GetJobRuns", "glue:GetConnection", "ec2:DescribeVpcEndpoints"
         ]
         Resource = "*"
       },
@@ -268,6 +268,12 @@ resource "aws_iam_role_policy" "data_engineer" {
         Effect   = "Allow"
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "arn:aws:logs:*:*:log-group:/aws-glue/*"
+      },
+      {
+        Sid      = "GlueNetworkInterfaceTags"
+        Effect   = "Allow"
+        Action   = ["ec2:CreateTags", "ec2:DeleteTags"]
+        Resource = "arn:aws:ec2:*:*:network-interface/*"
       }
     ]
   })
@@ -308,10 +314,22 @@ resource "aws_iam_role_policy" "model_monitor" {
 
     Statement = [
       {
-        Sid      = "MonitoringSchedules"
+        Sid      = "ReadProcessingJobs"
         Effect   = "Allow"
-        Action   = ["sagemaker:CreateMonitoringSchedule", "sagemaker:DescribeMonitoringSchedule", "sagemaker:ListMonitoringSchedules", "sagemaker:UpdateMonitoringSchedule", "sagemaker:DeleteMonitoringSchedule"]
+        Action   = ["sagemaker:DescribeProcessingJob", "sagemaker:ListProcessingJobs"]
         Resource = "*"
+      },
+      {
+        Sid      = "ReadArtifacts"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*/artifacts/*"
+      },
+      {
+        Sid      = "ListDataBucket"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket", "s3:GetBucketLocation"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*"
       },
       {
         Sid      = "MonitoringMetrics"

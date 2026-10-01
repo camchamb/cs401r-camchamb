@@ -12,6 +12,21 @@ output "public_subnet_id" {
   value       = module.vpc.public_subnet_id
 }
 
+output "private_subnet_id" {
+  description = "ID of the private subnet"
+  value       = module.vpc.private_subnet_id
+}
+
+output "glue_database_name" {
+  description = "Name of the Glue Data Catalog database"
+  value       = module.glue.database_name
+}
+
+output "glue_transform_job_name" {
+  description = "Name of the Glue transform job"
+  value       = module.glue.transform_job_name
+}
+
 output "s3_bucket_name" {
   description = "Name of the data bucket"
   value       = module.storage.bucket_name

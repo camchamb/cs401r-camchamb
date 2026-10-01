@@ -176,6 +176,15 @@ resource "aws_security_group" "this" {
     cidr_blocks = [var.vpc_cidr]
   }
 
+  # Glue network interfaces must be allowed to communicate with one another.
+  ingress {
+    description = "Allow all traffic from this security group"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
+  }
+
   # Allow all outbound traffic
   egress {
     description = "Allow all outbound traffic"
