@@ -221,7 +221,9 @@ resource "aws_iam_role_policy" "data_engineer" {
         Resource = [
           "arn:aws:s3:::${var.project}-${var.environment}-data-*/raw/*",
           "arn:aws:s3:::${var.project}-${var.environment}-data-*/processed/*",
-          "arn:aws:s3:::${var.project}-${var.environment}-data-*/features/*"
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/features/*",
+          # Spark creates this legacy S3 directory marker beside the features/ prefix.
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/features_$folder$"
         ]
       },
       {
@@ -235,6 +237,18 @@ resource "aws_iam_role_policy" "data_engineer" {
         Effect   = "Allow"
         Action   = ["s3:ListBucket", "s3:GetBucketLocation"]
         Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*"
+      },
+      {
+        Sid      = "FeatureStoreBucketPermissions"
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketAcl"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*"
+      },
+      {
+        Sid      = "FeatureStoreObjectAcl"
+        Effect   = "Allow"
+        Action   = ["s3:PutObjectAcl"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*/features/*"
       },
       {
         Sid    = "GlueCatalogAndJobs"
@@ -251,7 +265,7 @@ resource "aws_iam_role_policy" "data_engineer" {
       {
         Sid      = "FeatureStoreIngestion"
         Effect   = "Allow"
-        Action   = ["sagemaker:DescribeFeatureGroup", "sagemaker-featurestore-runtime:PutRecord"]
+        Action   = ["sagemaker:DescribeFeatureGroup", "sagemaker:PutRecord"]
         Resource = "*"
       },
       {

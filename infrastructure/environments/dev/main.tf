@@ -26,6 +26,14 @@ module "iam" {
   environment = var.environment
 }
 
+module "feature_store" {
+  source             = "../../modules/feature_store"
+  project            = var.project
+  environment        = var.environment
+  bucket_name        = module.storage.bucket_name
+  execution_role_arn = module.iam.data_engineer_role_arn
+}
+
 module "glue" {
   source                 = "../../modules/glue"
   project                = var.project
@@ -35,6 +43,8 @@ module "glue" {
   subnet_id              = module.vpc.private_subnet_id
   security_group_ids     = [module.vpc.security_group_id]
   availability_zone      = var.availability_zone
+  feature_group_name     = module.feature_store.feature_group_name
+  aws_region             = var.aws_region
 }
 
 module "sagemaker" {

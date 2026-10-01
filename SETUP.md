@@ -6,9 +6,8 @@ bash scripts/bootstrap-state.sh
 
 # Deploy
 cd infrastructure/environments/dev
-terraform init
-terraform plan
-terraform apply 2>&1 | tee ../../../docs/lab2b-apply-output.txt
+terraform plan    
+terraform apply 2>&1 | tee ../../../docs/lab2-extend-output.txt
 
 
 # Test

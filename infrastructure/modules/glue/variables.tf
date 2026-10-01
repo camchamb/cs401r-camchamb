@@ -33,3 +33,14 @@ variable "availability_zone" {
   type        = string
   default     = "us-east-1a"
 }
+
+variable "feature_group_name" {
+  description = "Name of the SageMaker Feature Store group that receives engineered features"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "AWS Region used by the Feature Store runtime client"
+  type        = string
+  default     = "us-east-1"
+}

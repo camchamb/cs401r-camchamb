@@ -10,8 +10,9 @@ terraform {
 }
 
 locals {
-  database_name = replace("${var.project}_${var.environment}", "-", "_")
-  script_key    = "artifacts/glue/transform.py"
+  database_name      = replace("${var.project}_${var.environment}", "-", "_")
+  script_key         = "artifacts/glue/transform.py"
+  feature_script_key = "artifacts/glue/feature_engineer.py"
 }
 
 resource "aws_glue_catalog_database" "this" {
@@ -39,6 +40,13 @@ resource "aws_s3_object" "transform_script" {
   key    = local.script_key
   source = "${path.module}/../../../glue-scripts/transform.py"
   etag   = filemd5("${path.module}/../../../glue-scripts/transform.py")
+}
+
+resource "aws_s3_object" "feature_engineer_script" {
+  bucket = var.bucket_name
+  key    = local.feature_script_key
+  source = "${path.module}/../../../glue-scripts/feature_engineer.py"
+  etag   = filemd5("${path.module}/../../../glue-scripts/feature_engineer.py")
 }
 
 resource "aws_glue_connection" "private" {
@@ -73,5 +81,30 @@ resource "aws_glue_job" "transform" {
     "--database_name"                    = aws_glue_catalog_database.this.name
     "--table_name"                       = "customers"
     "--output_path"                      = "s3://${var.bucket_name}/processed/customers/"
+  }
+}
+
+resource "aws_glue_job" "feature_engineer" {
+  name              = "${var.project}-${var.environment}-feature-engineer"
+  role_arn          = var.data_engineer_role_arn
+  glue_version      = "4.0"
+  number_of_workers = 2
+  worker_type       = "G.1X"
+  connections       = [aws_glue_connection.private.name]
+
+  command {
+    name            = "glueetl"
+    python_version  = "3"
+    script_location = "s3://${var.bucket_name}/${aws_s3_object.feature_engineer_script.key}"
+  }
+
+  default_arguments = {
+    "--job-language"                     = "python"
+    "--enable-continuous-cloudwatch-log" = "true"
+    "--enable-metrics"                   = "true"
+    "--input_path"                       = "s3://${var.bucket_name}/processed/customers/"
+    "--output_path"                      = "s3://${var.bucket_name}/features/customers/"
+    "--feature_group_name"               = var.feature_group_name
+    "--region"                           = var.aws_region
   }
 }

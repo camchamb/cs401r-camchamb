@@ -12,3 +12,8 @@ output "transform_job_name" {
   description = "Name of the Glue transform job"
   value       = aws_glue_job.transform.name
 }
+
+output "feature_engineer_job_name" {
+  description = "Name of the Glue feature-engineering job"
+  value       = aws_glue_job.feature_engineer.name
+}

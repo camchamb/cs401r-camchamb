@@ -5,47 +5,214 @@
 [33m│[0m [0minstead.
 [33m╵[0m[0m
 [0m[1mmodule.glue.aws_glue_catalog_database.this: Refreshing state... [id=061624868577:northstar_dev][0m
-[0m[1mmodule.vpc.aws_vpc.this: Refreshing state... [id=vpc-032fd7318121d2d62][0m
 [0m[1mmodule.iam.aws_iam_role.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor][0m
-[0m[1mmodule.iam.aws_iam_role.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer][0m
-[0m[1mmodule.vpc.aws_eip.nat[0]: Refreshing state... [id=eipalloc-011da789110c82070][0m
+[0m[1mmodule.vpc.aws_vpc.this: Refreshing state... [id=vpc-032fd7318121d2d62][0m
 [0m[1mmodule.iam.aws_iam_role.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer][0m
+[0m[1mmodule.iam.aws_iam_role.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer][0m
 [0m[1mmodule.storage.data.aws_caller_identity.current: Reading...[0m[0m
+[0m[1mmodule.vpc.aws_eip.nat[0]: Refreshing state... [id=eipalloc-011da789110c82070][0m
 [0m[1mmodule.storage.data.aws_caller_identity.current: Read complete after 0s [id=061624868577][0m
 [0m[1mmodule.storage.aws_s3_bucket.data: Refreshing state... [id=northstar-dev-data-061624868577][0m
 [0m[1mmodule.iam.aws_iam_role_policy.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor:northstar-dev-ModelMonitorPolicy][0m
-[0m[1mmodule.iam.aws_iam_role_policy.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer:northstar-dev-DataEngineerPolicy][0m
 [0m[1mmodule.iam.aws_iam_role_policy.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer:northstar-dev-MLEngineerPolicy][0m
+[0m[1mmodule.iam.aws_iam_role_policy.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer:northstar-dev-DataEngineerPolicy][0m
+[0m[1mmodule.storage.aws_s3_bucket_public_access_block.data: Refreshing state... [id=northstar-dev-data-061624868577][0m
+[0m[1mmodule.storage.aws_s3_bucket_server_side_encryption_configuration.data: Refreshing state... [id=northstar-dev-data-061624868577][0m
+[0m[1mmodule.storage.aws_s3_bucket_versioning.data: Refreshing state... [id=northstar-dev-data-061624868577][0m
+[0m[1mmodule.vpc.aws_subnet.public: Refreshing state... [id=subnet-0d6ac78b074306838][0m
+[0m[1mmodule.storage.aws_s3_object.prefixes["features/"]: Refreshing state... [id=features/][0m
+[0m[1mmodule.vpc.aws_route_table.private: Refreshing state... [id=rtb-0c9d974f43520dee0][0m
+[0m[1mmodule.storage.aws_s3_object.prefixes["processed/"]: Refreshing state... [id=processed/][0m
+[0m[1mmodule.storage.aws_s3_object.prefixes["raw/"]: Refreshing state... [id=raw/][0m
+[0m[1mmodule.storage.aws_s3_object.prefixes["artifacts/"]: Refreshing state... [id=artifacts/][0m
 [0m[1mmodule.vpc.aws_internet_gateway.main: Refreshing state... [id=igw-00c3dded61f2a0b49][0m
 [0m[1mmodule.vpc.aws_subnet.private: Refreshing state... [id=subnet-05688796f1b413211][0m
-[0m[1mmodule.vpc.aws_route_table.private: Refreshing state... [id=rtb-0c9d974f43520dee0][0m
 [0m[1mmodule.vpc.aws_security_group.this: Refreshing state... [id=sg-0a9e321f50855cc9a][0m
-[0m[1mmodule.vpc.aws_subnet.public: Refreshing state... [id=subnet-0d6ac78b074306838][0m
+[0m[1mmodule.glue.aws_s3_object.transform_script: Refreshing state... [id=artifacts/glue/transform.py][0m
+[0m[1mmodule.glue.aws_glue_crawler.raw: Refreshing state... [id=northstar-dev-raw-crawler][0m
 [0m[1mmodule.vpc.aws_route.internet: Refreshing state... [id=r-rtb-08c4251878036535e1080289494][0m
 [0m[1mmodule.vpc.aws_route_table_association.public: Refreshing state... [id=rtbassoc-0f544070636118268][0m
 [0m[1mmodule.vpc.aws_nat_gateway.this[0]: Refreshing state... [id=nat-000b67531e74c4ec2][0m
 [0m[1mmodule.vpc.aws_route_table_association.private: Refreshing state... [id=rtbassoc-0841c803ede8e5371][0m
 [0m[1mmodule.glue.aws_glue_connection.private: Refreshing state... [id=061624868577:northstar-dev-glue-private][0m
 [0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Refreshing state... [id=d-sfovwifqujvp][0m
-[0m[1mmodule.storage.aws_s3_bucket_public_access_block.data: Refreshing state... [id=northstar-dev-data-061624868577][0m
-[0m[1mmodule.storage.aws_s3_bucket_server_side_encryption_configuration.data: Refreshing state... [id=northstar-dev-data-061624868577][0m
-[0m[1mmodule.storage.aws_s3_bucket_versioning.data: Refreshing state... [id=northstar-dev-data-061624868577][0m
-[0m[1mmodule.storage.aws_s3_object.prefixes["raw/"]: Refreshing state... [id=raw/][0m
-[0m[1mmodule.storage.aws_s3_object.prefixes["features/"]: Refreshing state... [id=features/][0m
-[0m[1mmodule.storage.aws_s3_object.prefixes["processed/"]: Refreshing state... [id=processed/][0m
-[0m[1mmodule.storage.aws_s3_object.prefixes["artifacts/"]: Refreshing state... [id=artifacts/][0m
-[0m[1mmodule.vpc.aws_route.private_nat[0]: Refreshing state... [id=r-rtb-0c9d974f43520dee01080289494][0m
-[0m[1mmodule.glue.aws_glue_crawler.raw: Refreshing state... [id=northstar-dev-raw-crawler][0m
-[0m[1mmodule.glue.aws_s3_object.transform_script: Refreshing state... [id=artifacts/glue/transform.py][0m
 [0m[1mmodule.glue.aws_glue_job.transform: Refreshing state... [id=northstar-dev-transform][0m
-[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Refreshing state... [id=arn:aws:sagemaker:us-east-1:061624868577:user-profile/d-sfovwifqujvp/MLEngineer][0m
+[0m[1mmodule.vpc.aws_route.private_nat[0]: Refreshing state... [id=r-rtb-0c9d974f43520dee01080289494][0m
 [0m[1mmodule.storage.aws_s3_bucket_lifecycle_configuration.data[0]: Refreshing state... [id=northstar-dev-data-061624868577][0m
+[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Refreshing state... [id=arn:aws:sagemaker:us-east-1:061624868577:user-profile/d-sfovwifqujvp/MLEngineer][0m
 
 Terraform used the selected providers to generate the following execution
 plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
   [33m~[0m update in-place[0m
 
 Terraform will perform the following actions:
+
+[1m  # module.feature_store.aws_sagemaker_feature_group.customer_features[0m will be created
+[0m  [32m+[0m[0m resource "aws_sagemaker_feature_group" "customer_features" {
+      [32m+[0m[0m arn                            = (known after apply)
+      [32m+[0m[0m event_time_feature_name        = "event_time"
+      [32m+[0m[0m feature_group_name             = "northstar-dev-customer-features"
+      [32m+[0m[0m id                             = (known after apply)
+      [32m+[0m[0m record_identifier_feature_name = "customer_id"
+      [32m+[0m[0m role_arn                       = "arn:aws:iam::061624868577:role/northstar-dev-DataEngineer"
+      [32m+[0m[0m tags_all                       = {
+          [32m+[0m[0m "Environment" = "dev"
+          [32m+[0m[0m "ManagedBy"   = "terraform"
+          [32m+[0m[0m "Project"     = "northstar"
+        }
+
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "customer_id"
+          [32m+[0m[0m feature_type = "String"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "event_time"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "days_since_last_purchase"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "customer_tenure_days"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "purchase_frequency_30d"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "purchase_frequency_90d"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "purchase_frequency_180d"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "avg_order_value"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "total_spend_90d"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "total_lifetime_value"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "avg_basket_size_6m"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "category_diversity_score"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "online_to_store_ratio"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "loyalty_tier"
+          [32m+[0m[0m feature_type = "String"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "churn_risk_score"
+          [32m+[0m[0m feature_type = "Fractional"
+        }
+      [32m+[0m[0m feature_definition {
+          [32m+[0m[0m feature_name = "churn_label"
+          [32m+[0m[0m feature_type = "Integral"
+        }
+
+      [32m+[0m[0m offline_store_config {
+          [32m+[0m[0m table_format = "Glue"
+
+          [32m+[0m[0m data_catalog_config (known after apply)
+
+          [32m+[0m[0m s3_storage_config {
+              [32m+[0m[0m resolved_output_s3_uri = (known after apply)
+              [32m+[0m[0m s3_uri                 = "s3://northstar-dev-data-061624868577/features/offline-store/"
+            }
+        }
+
+      [32m+[0m[0m online_store_config {
+          [32m+[0m[0m enable_online_store = true
+        }
+
+      [32m+[0m[0m throughput_config (known after apply)
+    }
+
+[1m  # module.glue.aws_glue_job.feature_engineer[0m will be created
+[0m  [32m+[0m[0m resource "aws_glue_job" "feature_engineer" {
+      [32m+[0m[0m arn               = (known after apply)
+      [32m+[0m[0m connections       = [
+          [32m+[0m[0m "northstar-dev-glue-private",
+        ]
+      [32m+[0m[0m default_arguments = {
+          [32m+[0m[0m "--enable-continuous-cloudwatch-log" = "true"
+          [32m+[0m[0m "--enable-metrics"                   = "true"
+          [32m+[0m[0m "--feature_group_name"               = "northstar-dev-customer-features"
+          [32m+[0m[0m "--input_path"                       = "s3://northstar-dev-data-061624868577/processed/customers/"
+          [32m+[0m[0m "--job-language"                     = "python"
+          [32m+[0m[0m "--output_path"                      = "s3://northstar-dev-data-061624868577/features/customers/"
+          [32m+[0m[0m "--region"                           = "us-east-1"
+        }
+      [32m+[0m[0m glue_version      = "4.0"
+      [32m+[0m[0m id                = (known after apply)
+      [32m+[0m[0m max_capacity      = (known after apply)
+      [32m+[0m[0m name              = "northstar-dev-feature-engineer"
+      [32m+[0m[0m number_of_workers = 2
+      [32m+[0m[0m role_arn          = "arn:aws:iam::061624868577:role/northstar-dev-DataEngineer"
+      [32m+[0m[0m tags_all          = {
+          [32m+[0m[0m "Environment" = "dev"
+          [32m+[0m[0m "ManagedBy"   = "terraform"
+          [32m+[0m[0m "Project"     = "northstar"
+        }
+      [32m+[0m[0m timeout           = (known after apply)
+      [32m+[0m[0m worker_type       = "G.1X"
+
+      [32m+[0m[0m command {
+          [32m+[0m[0m name            = "glueetl"
+          [32m+[0m[0m python_version  = "3"
+          [32m+[0m[0m runtime         = (known after apply)
+          [32m+[0m[0m script_location = "s3://northstar-dev-data-061624868577/artifacts/glue/feature_engineer.py"
+        }
+
+      [32m+[0m[0m execution_property (known after apply)
+
+      [32m+[0m[0m notification_property (known after apply)
+    }
+
+[1m  # module.glue.aws_s3_object.feature_engineer_script[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_object" "feature_engineer_script" {
+      [32m+[0m[0m acl                    = (known after apply)
+      [32m+[0m[0m arn                    = (known after apply)
+      [32m+[0m[0m bucket                 = "northstar-dev-data-061624868577"
+      [32m+[0m[0m bucket_key_enabled     = (known after apply)
+      [32m+[0m[0m checksum_crc32         = (known after apply)
+      [32m+[0m[0m checksum_crc32c        = (known after apply)
+      [32m+[0m[0m checksum_crc64nvme     = (known after apply)
+      [32m+[0m[0m checksum_sha1          = (known after apply)
+      [32m+[0m[0m checksum_sha256        = (known after apply)
+      [32m+[0m[0m content_type           = (known after apply)
+      [32m+[0m[0m etag                   = "2ea7d205dd82f83326dd21e964a5da4b"
+      [32m+[0m[0m force_destroy          = false
+      [32m+[0m[0m id                     = (known after apply)
+      [32m+[0m[0m key                    = "artifacts/glue/feature_engineer.py"
+      [32m+[0m[0m kms_key_id             = (known after apply)
+      [32m+[0m[0m server_side_encryption = (known after apply)
+      [32m+[0m[0m source                 = "../../modules/glue/../../../glue-scripts/feature_engineer.py"
+      [32m+[0m[0m storage_class          = (known after apply)
+      [32m+[0m[0m tags_all               = {
+          [32m+[0m[0m "Environment" = "dev"
+          [32m+[0m[0m "ManagedBy"   = "terraform"
+          [32m+[0m[0m "Project"     = "northstar"
+        }
+      [32m+[0m[0m version_id             = (known after apply)
+    }
 
 [1m  # module.iam.aws_iam_role_policy.data_engineer[0m will be updated in-place
 [0m  [33m~[0m[0m resource "aws_iam_role_policy" "data_engineer" {
@@ -64,26 +231,51 @@ Terraform will perform the following actions:
                         Resource = "arn:aws:s3:::northstar-dev-data-*"
                         Sid      = "ListDataBucket"
                     },
-                  [33m~[0m[0m {
-                      [33m~[0m[0m Action   = [
-                            [90m# (14 unchanged elements hidden)[0m[0m
-                            "glue:BatchDeletePartition",
-                          [32m+[0m[0m "ec2:DescribeRouteTables",
-                            "glue:StartJobRun",
-                            [90m# (4 unchanged elements hidden)[0m[0m
+                  [32m+[0m[0m {
+                      [32m+[0m[0m Action   = [
+                          [32m+[0m[0m "s3:GetBucketAcl",
                         ]
-                        [90m# (3 unchanged attributes hidden)[0m[0m
+                      [32m+[0m[0m Effect   = "Allow"
+                      [32m+[0m[0m Resource = "arn:aws:s3:::northstar-dev-data-*"
+                      [32m+[0m[0m Sid      = "FeatureStoreBucketPermissions"
+                    },
+                  [32m+[0m[0m {
+                      [32m+[0m[0m Action   = [
+                          [32m+[0m[0m "s3:PutObjectAcl",
+                        ]
+                      [32m+[0m[0m Effect   = "Allow"
+                      [32m+[0m[0m Resource = "arn:aws:s3:::northstar-dev-data-*/features/*"
+                      [32m+[0m[0m Sid      = "FeatureStoreObjectAcl"
                     },
                     {
                         Action   = [
-                            "sagemaker:DescribeFeatureGroup",
-                            "sagemaker-featurestore-runtime:PutRecord",
+                            "glue:CreateDatabase",
+                            "glue:GetDatabase",
+                            "glue:GetDatabases",
+                            "glue:CreateTable",
+                            "glue:GetTable",
+                            "glue:GetTables",
+                            "glue:UpdateTable",
+                            "glue:DeleteTable",
+                            "glue:GetPartition",
+                            "glue:GetPartitions",
+                            "glue:CreatePartition",
+                            "glue:BatchCreatePartition",
+                            "glue:UpdatePartition",
+                            "glue:DeletePartition",
+                            "glue:BatchDeletePartition",
+                            "ec2:DescribeRouteTables",
+                            "glue:StartJobRun",
+                            "glue:GetJobRun",
+                            "glue:GetJobRuns",
+                            "glue:GetConnection",
+                            "ec2:DescribeVpcEndpoints",
                         ]
                         Effect   = "Allow"
                         Resource = "*"
-                        Sid      = "FeatureStoreIngestion"
+                        Sid      = "GlueCatalogAndJobs"
                     },
-                    [90m# (3 unchanged elements hidden)[0m[0m
+                    [90m# (4 unchanged elements hidden)[0m[0m
                 ]
                 [90m# (1 unchanged attribute hidden)[0m[0m
             }
@@ -112,7 +304,11 @@ Terraform will perform the following actions:
         [90m# (2 unchanged blocks hidden)[0m[0m
     }
 
-[1mPlan:[0m [0m0 to add, 2 to change, 0 to destroy.
+[1mPlan:[0m [0m3 to add, 2 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m feature_group_name             = "northstar-dev-customer-features"
+  [32m+[0m[0m glue_feature_engineer_job_name = "northstar-dev-feature-engineer"
 [0m[1m
 Do you want to perform these actions?[0m
   Terraform will perform the actions described above.
@@ -120,15 +316,28 @@ Do you want to perform these actions?[0m
 
   [1mEnter a value:[0m [0m
 [0m[1mmodule.iam.aws_iam_role_policy.data_engineer: Modifying... [id=northstar-dev-DataEngineer:northstar-dev-DataEngineerPolicy][0m[0m
+[0m[1mmodule.glue.aws_s3_object.feature_engineer_script: Creating...[0m[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.customer_features: Creating...[0m[0m
 [0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Modifying... [id=d-sfovwifqujvp][0m[0m
 [0m[1mmodule.iam.aws_iam_role_policy.data_engineer: Modifications complete after 0s [id=northstar-dev-DataEngineer:northstar-dev-DataEngineerPolicy][0m
+[0m[1mmodule.glue.aws_s3_object.feature_engineer_script: Creation complete after 0s [id=artifacts/glue/feature_engineer.py][0m
 [0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Modifications complete after 1s [id=d-sfovwifqujvp][0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.customer_features: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.customer_features: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.customer_features: Still creating... [00m31s elapsed][0m[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.customer_features: Still creating... [00m41s elapsed][0m[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.customer_features: Still creating... [00m51s elapsed][0m[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.customer_features: Creation complete after 52s [id=northstar-dev-customer-features][0m
+[0m[1mmodule.glue.aws_glue_job.feature_engineer: Creating...[0m[0m
+[0m[1mmodule.glue.aws_glue_job.feature_engineer: Creation complete after 1s [id=northstar-dev-feature-engineer][0m
 [0m[1m[32m
-Apply complete! Resources: 0 added, 2 changed, 0 destroyed.[0m
+Apply complete! Resources: 3 added, 2 changed, 0 destroyed.[0m
 [0m[1m[32m
 Outputs:
 
-[0mglue_database_name = "northstar_dev"
+[0mfeature_group_name = "northstar-dev-customer-features"
+glue_database_name = "northstar_dev"
+glue_feature_engineer_job_name = "northstar-dev-feature-engineer"
 glue_transform_job_name = "northstar-dev-transform"
 ml_engineer_role_arn = "arn:aws:iam::061624868577:role/northstar-dev-MLEngineer"
 private_subnet_id = "subnet-05688796f1b413211"

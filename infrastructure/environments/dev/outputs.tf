@@ -27,6 +27,16 @@ output "glue_transform_job_name" {
   value       = module.glue.transform_job_name
 }
 
+output "feature_group_name" {
+  description = "Name of the SageMaker Feature Store feature group"
+  value       = module.feature_store.feature_group_name
+}
+
+output "glue_feature_engineer_job_name" {
+  description = "Name of the Glue feature-engineering job"
+  value       = module.glue.feature_engineer_job_name
+}
+
 output "s3_bucket_name" {
   description = "Name of the data bucket"
   value       = module.storage.bucket_name
