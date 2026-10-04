@@ -241,7 +241,7 @@ LBLTYPE=$(aws sagemaker describe-feature-group --feature-group-name "${FG}" \
 ETTYPE=$(aws sagemaker describe-feature-group --feature-group-name "${FG}" \
   --query "FeatureDefinitions[?FeatureName=='event_time'].FeatureType" --output text 2>/dev/null)
 [ "${ETTYPE}" = "Fractional" ] && ok "event_time is Fractional" \
-  || bad "event_time is Fractional" "${ETTYPE} - String causes silent PutRecord drops"
+  || bad "event_time is Fractional" "${ETTYPE} - lab requires Fractional (epoch seconds)"
 
 ONLINE=$(aws sagemaker describe-feature-group --feature-group-name "${FG}" \
   --query 'OnlineStoreConfig.EnableOnlineStore' --output text 2>/dev/null)
