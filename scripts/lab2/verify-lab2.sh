@@ -126,7 +126,7 @@ aws s3 cp "s3://${BUCKET}/processed/customers/" "${TMP}/processed/" --recursive 
   --exclude "*_glue_temp*" >/dev/null 2>&1
 aws s3 cp "s3://${BUCKET}/features/customers/" "${TMP}/features/" --recursive >/dev/null 2>&1
 
-python3 - "${TMP}" <<'PY'
+python - "${TMP}" <<'PY'
 import glob, sys
 tmp = sys.argv[1]
 tty = sys.stdout.isatty()

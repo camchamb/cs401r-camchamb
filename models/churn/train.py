@@ -32,6 +32,7 @@ import argparse
 import json
 import os
 import pickle
+import tarfile
 from datetime import datetime, timezone
 
 import boto3
@@ -70,7 +71,7 @@ except ImportError:
     raise ImportError("xgboost is required: pip install xgboost")
 
 from sklearn.metrics import (auc, classification_report, precision_recall_curve,
-                              roc_auc_score)
+                              roc_auc_score, recall_score)
 from sklearn.model_selection import train_test_split
 
 # ── Argument Parsing ───────────────────────────────────────────────────────────
@@ -206,9 +207,15 @@ def load_features_from_feature_store(feature_group_name: str,
             will not run a query without an output location, so this has to be
             threaded in from --artifacts-bucket rather than assumed.
 
-    TODO: Implement this function to pull training data from your Lab 2 Feature Store.
     Reference: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-use-with-studio.html
     """
+    if os.environ.get("SM_TRAINING_ENV"):
+        raise RuntimeError(
+            "Athena queries must run locally under the user's AWS credentials, "
+            "not inside a SageMaker training container. Run this Feature Store "
+            "query locally, write the result under artifacts/, and provide that "
+            "file to the training job with --local-data-path."
+        )
     if not SAGEMAKER_AVAILABLE:
         raise RuntimeError("SageMaker SDK not available - use --local-data-path for local testing")
 
@@ -222,8 +229,6 @@ def load_features_from_feature_store(feature_group_name: str,
     session = Session()
     feature_group = FeatureGroup(name=feature_group_name, sagemaker_session=session)
 
-    # TODO: Execute this query and return the result as a DataFrame.
-    #
     # Two things in the query below are easy to get wrong, so read them:
     #
     # 1. event_time is Fractional - Unix epoch SECONDS, not an ISO string.
@@ -299,12 +304,13 @@ def load_features_from_feature_store(feature_group_name: str,
         ORDER BY customer_id
     """
 
-    # query.run(query_string=query_string,
-    #           output_location=f"s3://{artifacts_bucket}/artifacts/athena-results/")
-    # query.wait()
-    # df = query.as_dataframe()
-    # return df
-    raise NotImplementedError("TODO: Implement Feature Store query")
+    query.run(query_string=query_string,
+              output_location=f"s3://{artifacts_bucket}/artifacts/athena-results/")
+    query.wait()
+    print("Athena QueryExecutionId: "
+          f"{query.get_query_execution()['QueryExecution']['QueryExecutionId']}")
+    df = query.as_dataframe()
+    return df
 
 
 def load_features_local(path: str) -> pd.DataFrame:
@@ -327,20 +333,41 @@ def load_features_local(path: str) -> pd.DataFrame:
 def preprocess_features(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     """
     Clean and prepare features for XGBoost training.
-    Returns (X, y) arrays.
+
+    Missing feature values are imputed with -1 as a sentinel value.
+    This preserves all labeled samples and gives the model a consistent
+    numeric representation for missing values.
+
+    Rows with missing labels are dropped because they cannot be used
+    for supervised training.
+
+    Returns:
+        X: Feature matrix of shape (n_samples, n_features).
+        y: Integer label array of shape (n_samples,).
     """
     print(f"Preprocessing {len(df):,} samples...")
 
-    # Drop rows where label is missing
-    df = df.dropna(subset=[LABEL_COLUMN])
+    # Remove rows without labels; supervised learning requires known targets.
+    df = df.dropna(subset=[LABEL_COLUMN]).copy()
 
-    # TODO: Handle missing values in features
-    # XGBoost can handle NaN natively, but document your imputation strategy.
-    # For features with business-meaningful nulls (e.g., clickstream for non-web customers),
-    # consider median imputation or a sentinel value.
-    X = df[FEATURE_COLUMNS].fillna(-1).values  # Sentinel -1 for missing
-    y = df[LABEL_COLUMN].values.astype(int)
+    if df.empty:
+        raise ValueError("No samples remain after dropping rows with missing labels.")
 
+    X_df = df[FEATURE_COLUMNS].copy()
+    X_df = X_df.fillna(-1)
+
+    X = X_df.to_numpy(dtype=np.float32)
+
+    y = df[LABEL_COLUMN].to_numpy(dtype=int)
+
+    if not np.isfinite(X).all():
+        raise ValueError("Feature matrix contains infinite or non-finite values.")
+
+    if len(np.unique(y)) < 2:
+        raise ValueError("Training data must contain at least two classes.")
+
+    print(f"  Samples after dropping missing labels: {len(df):,}")
+    print(f"  Missing feature values imputed: {int(df[FEATURE_COLUMNS].isna().sum().sum()):,}")
     print(f"  Positive class rate: {y.mean():.1%}")
     print(f"  Feature matrix shape: {X.shape}")
 
@@ -569,10 +596,6 @@ def evaluate_model(model: xgb.Booster,
 
     print("  All thresholds passed ✓")
 
-    # TODO (Lab 3): Add slice evaluation
-    # Evaluate AUC and recall separately for each loyalty_tier and flag
-    # any segment where recall drops more than 10pp below aggregate recall.
-
     return metrics
 
 
@@ -586,18 +609,61 @@ def evaluate_slices(model: xgb.Booster,
     Evaluate model performance by slice (e.g., loyalty_tier, age_band).
     Flag slices where recall@10% drops more than 10pp below aggregate.
 
-    TODO: Implement this function in Lab 3.
+    Each slice is scored using its own top 10 percent, so a small slice is not
+    silently omitted just because the overall top 10 percent contains no rows
+    from it.
     """
+    if len(X_val) != len(y_val) or len(y_val) != len(slice_column):
+        raise ValueError("X_val, y_val, and slice_column must have the same length.")
+
     dval = xgb.DMatrix(X_val, feature_names=FEATURE_COLUMNS)
     y_pred_proba = model.predict(dval)
-    aggregate_recall = None  # TODO: compute
+    y_val = np.asarray(y_val)
+
+    def recall_at_top_10_percent(labels: np.ndarray,
+                                 probabilities: np.ndarray) -> float:
+        if len(labels) == 0 or labels.sum() == 0:
+            return 0.0
+        # argsort selects exactly ceil(10% * n), even when prediction scores tie.
+        n_selected = max(1, int(np.ceil(len(labels) * 0.10)))
+        selected = np.argsort(probabilities, kind="mergesort")[-n_selected:]
+        return float(labels[selected].sum() / labels.sum())
+
+    aggregate_recall = recall_at_top_10_percent(y_val, y_pred_proba)
+    slice_values = pd.Series(slice_column).reset_index(drop=True)
 
     slice_results = {}
-    for slice_value in slice_column.unique():
-        mask = (slice_column == slice_value).values
-        # TODO: compute recall@10% for this slice
-        # Flag if recall < aggregate_recall - 0.10
-        pass
+    for slice_value in slice_values.drop_duplicates():
+        mask = (slice_values == slice_value).to_numpy()
+        labels = y_val[mask]
+        probabilities = y_pred_proba[mask]
+        recall_top10 = recall_at_top_10_percent(labels, probabilities)
+        slice_auc = (float(roc_auc_score(labels, probabilities))
+                     if len(np.unique(labels)) == 2 else None)
+        recall_gap = aggregate_recall - recall_top10
+        flagged = recall_gap > 0.10
+        positives = int(labels.sum())
+        too_small_to_conclude = positives < 20
+
+        slice_results[str(slice_value)] = {
+            "n_samples": int(mask.sum()),
+            "positives": positives,
+            "auc_roc": round(slice_auc, 4) if slice_auc is not None else None,
+            "recall_top10": round(recall_top10, 4),
+            "recall_gap": round(recall_gap, 4),
+            "flagged": flagged,
+            "too_small_to_conclude": too_small_to_conclude,
+        }
+
+    print("\n── Slice Evaluation ─────────────────────────────────")
+    print(f"  Aggregate recall@10%: {aggregate_recall:.4f}")
+    for value, result in slice_results.items():
+        status = "FLAG" if result["flagged"] else "OK"
+        auc_display = (f"{result['auc_roc']:.4f}"
+                       if result["auc_roc"] is not None else "N/A")
+        print(f"  {value}: n={result['n_samples']}, AUC={auc_display}, "
+              f"recall@10%={result['recall_top10']:.4f}, "
+              f"positives={result['positives']} [{status}]")
 
     return slice_results
 
@@ -635,34 +701,13 @@ def track_run(args, metrics: dict, scale_pos_weight: float) -> None:
          is the SigV4 auth plugin for arn:aws:sagemaker:... tracking URIs.
          Without it you get a connection error that never mentions credentials.
 
-    TODO: Implement this function.
+    The tracking URI is a SageMaker MLflow App ARN; sagemaker-mlflow supplies
+    the authentication plugin used by MLflow for that URI.
     """
     if not args.mlflow_arn:
         print("\n(no --mlflow-arn given; skipping experiment tracking)")
         return
 
-    # TODO: log this run to the MLflow App.
-    #
-    # import mlflow
-    #
-    # mlflow.set_tracking_uri(args.mlflow_arn)   # the App ARN, verbatim
-    # mlflow.set_experiment(args.mlflow_experiment)
-    #
-    # with mlflow.start_run(run_name=args.run_name):
-    #     mlflow.log_params({
-    #         "max_depth": args.max_depth,
-    #         "eta": args.eta,
-    #         "num_round": args.num_round,
-    #         "min_child_weight": args.min_child_weight,
-    #         "subsample": args.subsample,
-    #         "colsample_bytree": args.colsample_bytree,
-    #         "scale_pos_weight": scale_pos_weight,
-    #         "xgboost_version": xgb.__version__,   # see below -- this matters
-    #     })
-    #     mlflow.log_metrics({
-    #         k: v for k, v in metrics.items() if isinstance(v, (int, float))
-    #     })
-    #
     # LOG THE XGBOOST VERSION AS A PARAM. Lab 3 documents that identical data
     # and an identical split produce different metrics on XGBoost 3.2.0 vs 1.7
     # (the SageMaker training container is 1.7). If you train some runs locally
@@ -674,7 +719,36 @@ def track_run(args, metrics: dict, scale_pos_weight: float) -> None:
     # it earns 2 of 5. Vary something you can defend, and be able to say what
     # the variation did to the metrics.
 
-    print("TODO: Log run to MLflow App (see comments above)")
+    try:
+        import mlflow
+    except ImportError as exc:
+        raise RuntimeError(
+            "MLflow tracking was requested, but mlflow and sagemaker-mlflow "
+            "must be installed in the training environment."
+        ) from exc
+
+    params = {
+        "max_depth": args.max_depth,
+        "eta": args.eta,
+        "num_round": args.num_round,
+        "min_child_weight": args.min_child_weight,
+        "subsample": args.subsample,
+        "colsample_bytree": args.colsample_bytree,
+        "scale_pos_weight": scale_pos_weight,
+        "xgboost_version": xgb.__version__,
+    }
+    numeric_metrics = {
+        key: float(value) for key, value in metrics.items()
+        if isinstance(value, (int, float, np.integer, np.floating))
+        and np.isfinite(value)
+    }
+
+    mlflow.set_tracking_uri(args.mlflow_arn)
+    mlflow.set_experiment(args.mlflow_experiment)
+    with mlflow.start_run(run_name=args.run_name):
+        mlflow.log_params(params)
+        mlflow.log_metrics(numeric_metrics)
+    print(f"Logged run to MLflow experiment '{args.mlflow_experiment}'.")
 
 
 # ── Model Saving & Registry ────────────────────────────────────────────────────
@@ -708,23 +782,52 @@ def save_and_register_model(model: xgb.Booster,
     with open(os.path.join(args.model_dir, "model_metadata.json"), "w") as f:
         json.dump(metadata, f, indent=2)
 
-    # TODO: Register in SageMaker Model Registry
-    # The model package group must be "northstar-churn-models" -- Lab 5 deploys
-    # from that group by name, so any other name breaks Lab 5.
-    # Include the evaluation metrics in the model card / description
-    # Status must be "PendingManualApproval" — never "Approved" from this script
-    #
-    # sm_client = boto3.client("sagemaker")
-    # sm_client.create_model_package(
-    #     ModelPackageGroupName="northstar-churn-models",
-    #     ModelPackageDescription=f"Churn model trained {datetime.utcnow().date()}",
-    #     InferenceSpecification={...},
-    #     ModelApprovalStatus="PendingManualApproval",
-    #     CustomerMetadataProperties={
-    #         k: str(v) for k, v in metrics.items()
-    #     },
-    # )
-    print("TODO: Register model in SageMaker Model Registry (see comments above)")
+    # A model package needs a model artifact in S3. Package the native XGBoost
+    # file under SageMaker's conventional name before uploading it.
+    model_archive = os.path.join(args.model_dir, "model.tar.gz")
+    with tarfile.open(model_archive, "w:gz") as archive:
+        archive.add(model_path, arcname="xgboost-model")
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    artifact_key = f"artifacts/models/churn/{timestamp}/model.tar.gz"
+    s3_client = boto3.client("s3")
+    s3_client.upload_file(model_archive, args.artifacts_bucket, artifact_key)
+    model_data_url = f"s3://{args.artifacts_bucket}/{artifact_key}"
+
+    try:
+        from sagemaker import image_uris
+        image_uri = image_uris.retrieve(
+            framework="xgboost",
+            region=boto3.session.Session().region_name,
+            image_scope="inference",
+            instance_type="ml.m5.large",
+        )
+    except (ImportError, AttributeError) as exc:
+        raise RuntimeError(
+            "SageMaker SDK image resolution is required to register the model."
+        ) from exc
+
+    scalar_metrics = {
+        key: str(value) for key, value in metrics.items()
+        if isinstance(value, (str, int, float, bool, np.integer, np.floating))
+    }
+    description = (
+        f"Churn model trained {datetime.now(timezone.utc).date()}. "
+        f"Metrics: {json.dumps(scalar_metrics, sort_keys=True)}"
+    )
+    response = boto3.client("sagemaker").create_model_package(
+        ModelPackageGroupName="northstar-churn-models",
+        ModelPackageDescription=description[:1024],
+        InferenceSpecification={
+            "Containers": [{"Image": image_uri, "ModelDataUrl": model_data_url}],
+            "SupportedContentTypes": ["text/csv"],
+            "SupportedResponseMIMETypes": ["text/csv"],
+        },
+        ModelApprovalStatus="PendingManualApproval",
+        CustomerMetadataProperties=scalar_metrics,
+    )
+    print("Registered pending-approval model package: "
+          f"{response.get('ModelPackageArn', '<unknown ARN>')}")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
@@ -750,6 +853,8 @@ def main():
         )
 
     # 2. Preprocess
+    df = df.dropna(subset=[LABEL_COLUMN]).reset_index(drop=True)
+
     X, y = preprocess_features(df)
 
     # 3. Train/validation split (temporal split is better — split by customer_id here for simplicity)
@@ -758,14 +863,12 @@ def main():
     # is calibrated on a test set that size; a 0.20 split leaves 2,000 rows and
     # widens the interval enough to matter.
     #
-    # TODO (Task 1): to run evaluate_slices() you need the tier for each
-    # validation row. Pass df[SLICE_COLUMN] as a third array to this same call
-    # and it is split on the identical indices:
-    #   X_train, X_val, y_train, y_val, tier_train, tier_val = train_test_split(
-    #       X, y, df[SLICE_COLUMN], test_size=0.30, random_state=42, stratify=y)
-    # Re-deriving the tiers afterwards from df will NOT line up.
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.30, random_state=42, stratify=y
+    if SLICE_COLUMN not in df.columns:
+        raise ValueError(
+            f"'{SLICE_COLUMN}' is required for loyalty-tier slice evaluation."
+        )
+    X_train, X_val, y_train, y_val, _, tier_val = train_test_split(
+        X, y, df[SLICE_COLUMN], test_size=0.30, random_state=42, stratify=y
     )
     print(f"\nTrain: {len(X_train):,} | Validation: {len(X_val):,}")
 
@@ -775,6 +878,27 @@ def main():
     # 5. Evaluate
     baseline_proba = train_recency_baseline(X_train, y_train, X_val)
     metrics = evaluate_model(model, X_val, y_val, baseline_proba)
+    metrics["loyalty_tier_slices"] = evaluate_slices(
+        model, X_val, y_val, tier_val
+    )
+    metrics["flagged_tiers"] = [
+        tier for tier, result in metrics["loyalty_tier_slices"].items()
+        if result["flagged"]
+    ]
+    slice_rows = [
+        {
+            "tier": tier,
+            "n": result["n_samples"],
+            "positives": result["positives"],
+            "auc": result["auc_roc"],
+            "recall": result["recall_top10"],
+            "too_small_to_conclude": result["too_small_to_conclude"],
+        }
+        for tier, result in metrics["loyalty_tier_slices"].items()
+    ]
+    slice_path = os.path.join(args.output_data_dir, "slice-evaluation.csv")
+    pd.DataFrame(slice_rows).to_csv(slice_path, index=False)
+    print(f"Slice evaluation saved to {slice_path}")
 
     # 6. Save and register
     save_and_register_model(model, metrics, args)

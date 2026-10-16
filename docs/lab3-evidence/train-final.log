@@ -1,0 +1,68 @@
+sagemaker.config INFO - Not applying SDK defaults from location: C:\ProgramData\sagemaker\sagemaker\config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: C:\Users\camer\AppData\Local\sagemaker\sagemaker\config.yaml
+C:\Python314\Lib\site-packages\sagemaker\__init__.py:86: SageMakerV2DeprecationWarning: You are using the SageMaker Python SDK v2, which is on path of deprecation. v3 is the actively developed major version.
+See https://github.com/aws/sagemaker-python-sdk/blob/master/migration.md for the migration guide. Set SAGEMAKER_SUPPRESS_V2_WARNING=1 to silence this warning.
+  warn_v2_deprecation()
+You are using the SageMaker Python SDK v2, which is on path of deprecation. v3 is the actively developed major version.
+See https://github.com/aws/sagemaker-python-sdk/blob/master/migration.md for the migration guide. Set SAGEMAKER_SUPPRESS_V2_WARNING=1 to silence this warning.
+============================================================
+NorthStar Churn Prediction — Training Script
+============================================================
+Athena QueryExecutionId: 42e4742f-0a3d-467d-b2b6-b20252afb6e1
+Preprocessing 9,999 samples...
+  Samples after dropping missing labels: 9,999
+  Missing feature values imputed: 0
+  Positive class rate: 22.0%
+  Feature matrix shape: (9999, 11)
+
+Train: 6,999 | Validation: 3,000
+
+Training XGBoost with params: {
+  "objective": "binary:logistic",
+  "eval_metric": [
+    "logloss",
+    "auc"
+  ],
+  "max_depth": 6,
+  "eta": 0.1,
+  "min_child_weight": 5,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "scale_pos_weight": 3.544805194805195,
+  "seed": 42,
+  "verbosity": 1
+}
+[0]	train-logloss:0.67033	train-auc:0.76730	validation-logloss:0.67308	validation-auc:0.72207
+[25]	train-logloss:0.48019	train-auc:0.86200	validation-logloss:0.51941	validation-auc:0.78100
+[30]	train-logloss:0.46861	train-auc:0.86885	validation-logloss:0.51497	validation-auc:0.77929
+C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:570: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "eval_timestamp": datetime.utcnow().isoformat(),
+C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:767: UserWarning: [21:39:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1553: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  model.save_model(model_path)
+C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:780: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "training_date": datetime.utcnow().isoformat(),
+2026/10/15 21:39:56 INFO mlflow.tracking.fluent: Experiment with name 'northstar-churn-lab3' does not exist. Creating a new experiment.
+
+── Evaluation Results ──────────────────────────────
+  precision_top10          : 0.7100  (threshold: 0.5000)  ✓ PASS
+  recall_top10             : 0.3227  (threshold: 0.2500)  ✓ PASS
+  auc_lift 95% CI          : [0.0377, 0.0756]  (must exclude 0)  ✓ PASS
+  All thresholds passed ✓
+
+── Slice Evaluation ─────────────────────────────────
+  Aggregate recall@10%: 0.3227
+  Silver: n=1139, AUC=0.7098, recall@10%=0.2522, positives=226 [OK]
+  Platinum: n=307, AUC=0.8811, recall@10%=0.4762, positives=21 [OK]
+  Bronze: n=1071, AUC=0.7521, recall@10%=0.2881, positives=361 [OK]
+  Gold: n=483, AUC=0.7423, recall@10%=0.3269, positives=52 [OK]
+Slice evaluation saved to docs/lab3-evidence\slice-evaluation.csv
+
+✓ Model saved to ./model\model.xgb
+Registered pending-approval model package: arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/1
+🏃 View run final-athena-graded-run at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/1/runs/ad35ae06c86f48dab25ea5c200a66fa7
+🧪 View experiment at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/1
+Logged run to MLflow experiment 'northstar-churn-lab3'.
+
+============================================================
+Training complete. AUC-ROC: 0.7793
+============================================================

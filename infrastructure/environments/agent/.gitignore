@@ -1,4 +1,0 @@
-build/
-.terraform/
-tfplan
-*.tfplan

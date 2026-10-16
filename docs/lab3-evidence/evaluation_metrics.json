@@ -1,0 +1,51 @@
+{
+  "auc_roc": 0.7793,
+  "precision_top10": 0.71,
+  "recall_top10": 0.3227,
+  "auc_vs_baseline": 0.0568,
+  "baseline_auc": 0.7225,
+  "lift_ci_low": 0.0377,
+  "lift_ci_high": 0.0756,
+  "positive_rate_val": 0.22,
+  "n_val_samples": 3000,
+  "eval_timestamp": "2026-10-16T03:39:50.762598",
+  "loyalty_tier_slices": {
+    "Silver": {
+      "n_samples": 1139,
+      "positives": 226,
+      "auc_roc": 0.7098,
+      "recall_top10": 0.2522,
+      "recall_gap": 0.0705,
+      "flagged": false,
+      "too_small_to_conclude": false
+    },
+    "Platinum": {
+      "n_samples": 307,
+      "positives": 21,
+      "auc_roc": 0.8811,
+      "recall_top10": 0.4762,
+      "recall_gap": -0.1535,
+      "flagged": false,
+      "too_small_to_conclude": false
+    },
+    "Bronze": {
+      "n_samples": 1071,
+      "positives": 361,
+      "auc_roc": 0.7521,
+      "recall_top10": 0.2881,
+      "recall_gap": 0.0346,
+      "flagged": false,
+      "too_small_to_conclude": false
+    },
+    "Gold": {
+      "n_samples": 483,
+      "positives": 52,
+      "auc_roc": 0.7423,
+      "recall_top10": 0.3269,
+      "recall_gap": -0.0042,
+      "flagged": false,
+      "too_small_to_conclude": false
+    }
+  },
+  "flagged_tiers": []
+}

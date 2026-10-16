@@ -9,5 +9,5 @@
 # Options: --mlflow-app-name NAME  --experiment NAME  --model-package-group NAME
 set -uo pipefail
 mkdir -p docs/lab3-evidence
-python3 "$(dirname "$0")/collect_lab3_evidence.py" "$@" 2>&1 | tee docs/lab3-evidence/collect-output.txt
+python "$(dirname "$0")/collect_lab3_evidence.py" "$@" 2>&1 | tee docs/lab3-evidence/collect-output.txt
 exit "${PIPESTATUS[0]}"
