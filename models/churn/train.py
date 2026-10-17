@@ -71,7 +71,7 @@ except ImportError:
     raise ImportError("xgboost is required: pip install xgboost")
 
 from sklearn.metrics import (auc, classification_report, precision_recall_curve,
-                              roc_auc_score, recall_score)
+                              confusion_matrix, roc_auc_score, recall_score)
 from sklearn.model_selection import train_test_split
 
 # ── Argument Parsing ───────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ def parse_args():
     # Names come from Lab 2's Terraform: `terraform output -raw feature_group_name`
     # and `terraform output -raw s3_bucket_name`. Do not invent new ones.
     parser.add_argument("--feature-group-name", type=str,
-                        default="northstar-dev-customer-features",
+                        default=os.environ.get("FEATURE_GROUP_NAME"),
                         help="SageMaker Feature Store feature group name (Lab 2 output)")
     # These dates bound the INGEST batch, not the feature window. Lab 2 stamps
     # event_time with the wall-clock time its Glue job ran (time.time()), not
@@ -92,11 +92,14 @@ def parse_args():
     # features were computed. A window that ends before your Lab 2 run (the old
     # default here was 2026-06-01) matches zero rows. These defaults match the
     # reference implementation and cover any Lab 2 run during the semester.
-    parser.add_argument("--training-start-date", type=str, default="2026-01-01",
+    parser.add_argument("--training-start-date", type=str,
+                        default=os.environ.get("TRAINING_START_DATE", "2026-01-01"),
                         help="Earliest Lab 2 ingest date to include (YYYY-MM-DD)")
-    parser.add_argument("--training-end-date", type=str, default="2027-01-01",
+    parser.add_argument("--training-end-date", type=str,
+                        default=os.environ.get("TRAINING_END_DATE", "2027-01-01"),
                         help="Latest Lab 2 ingest date to include (YYYY-MM-DD)")
-    parser.add_argument("--artifacts-bucket", type=str, required=True,
+    parser.add_argument("--artifacts-bucket", type=str,
+                        default=os.environ.get("ARTIFACTS_BUCKET"), required=False,
                         help="Your Lab 1 data bucket, northstar-dev-data-<account>. "
                              "Athena results and model artifacts go under its artifacts/ "
                              "prefix, the only prefix your MLEngineer role can write")
@@ -110,6 +113,20 @@ def parse_args():
     parser.add_argument("--min-child-weight", type=int, default=5)
     parser.add_argument("--subsample", type=float, default=0.8)
     parser.add_argument("--colsample-bytree", type=float, default=0.8)
+    parser.add_argument("--objective", type=str, default="binary:logistic")
+    parser.add_argument("--eval-metrics", nargs="+", default=["logloss", "auc"],
+                        help="XGBoost metrics; the final metric drives early stopping")
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--verbosity", type=int, default=1)
+    parser.add_argument("--early-stopping-rounds", type=int, default=20)
+    parser.add_argument("--verbose-eval", type=int, default=25)
+    parser.add_argument("--validation-fraction", type=float, default=0.30)
+    parser.add_argument("--baseline-max-depth", type=int, default=4)
+    parser.add_argument("--baseline-eta", type=float, default=0.1)
+    parser.add_argument("--baseline-num-round", type=int, default=200)
+    parser.add_argument("--baseline-subsample", type=float, default=0.9)
+    parser.add_argument("--baseline-colsample-bytree", type=float, default=0.9)
+    parser.add_argument("--baseline-eval-metric", type=str, default="auc")
     parser.add_argument("--scale-pos-weight", type=float, default=None,
                         help=(
                             "XGBoost positive-class weight. Leave unset and it is computed "
@@ -138,9 +155,22 @@ def parse_args():
     parser.add_argument("--model-dir", type=str,
                         default=os.environ.get("SM_MODEL_DIR", "./model"))
     parser.add_argument("--output-data-dir", type=str,
-                        default=os.environ.get("SM_OUTPUT_DATA_DIR", "./output"))
+                        default=os.environ.get("SM_OUTPUT_DATA_DIR",
+                                               "docs/lab3-evidence"))
+    parser.add_argument("--model-package-group-name", type=str,
+                        default=os.environ.get("MODEL_PACKAGE_GROUP_NAME",
+                                               "northstar-churn-models"))
+    parser.add_argument("--artifact-prefix", type=str,
+                        default=os.environ.get("ARTIFACT_PREFIX", "artifacts/models/churn"))
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not args.artifacts_bucket:
+        parser.error("--artifacts-bucket or ARTIFACTS_BUCKET is required")
+    if not args.local_data_path and not args.feature_group_name:
+        parser.error("--feature-group-name or FEATURE_GROUP_NAME is required unless --local-data-path is used")
+    if not 0 < args.validation_fraction < 1:
+        parser.error("--validation-fraction must be between zero and one")
+    return args
 
 
 # ── Feature Store Loading ──────────────────────────────────────────────────────
@@ -408,16 +438,16 @@ def train_model(X_train: np.ndarray,
         # 0.7822. Measured across 50 splits, that cost the model the promotion
         # gate on 28% of them -- a student doing everything right was told their
         # features did not beat recency. Keep "auc" last (defect 49).
-        "objective": "binary:logistic",
-        "eval_metric": ["logloss", "auc"],
+        "objective": args.objective,
+        "eval_metric": args.eval_metrics,
         "max_depth": args.max_depth,
         "eta": args.eta,
         "min_child_weight": args.min_child_weight,
         "subsample": args.subsample,
         "colsample_bytree": args.colsample_bytree,
         "scale_pos_weight": spw,
-        "seed": 42,
-        "verbosity": 1,
+        "seed": args.seed,
+        "verbosity": args.verbosity,
     }
 
     print(f"\nTraining XGBoost with params: {json.dumps(params, indent=2)}")
@@ -427,8 +457,8 @@ def train_model(X_train: np.ndarray,
         dtrain=dtrain,
         num_boost_round=args.num_round,
         evals=[(dtrain, "train"), (dval, "validation")],
-        early_stopping_rounds=20,
-        verbose_eval=25,
+        early_stopping_rounds=args.early_stopping_rounds,
+        verbose_eval=args.verbose_eval,
     )
 
     return model
@@ -459,7 +489,8 @@ BOOTSTRAP_SEED = 42
 
 def train_recency_baseline(X_train: np.ndarray,
                            y_train: np.ndarray,
-                           X_val: np.ndarray) -> np.ndarray:
+                           X_val: np.ndarray,
+                           args) -> np.ndarray:
     """Train the recency-only baseline and score the validation split.
 
     The baseline is a model over `days_since_last_purchase` ALONE, trained on
@@ -477,11 +508,13 @@ def train_recency_baseline(X_train: np.ndarray,
     dva = xgb.DMatrix(X_val[:, [i]], feature_names=[BASELINE_FEATURE])
     spw = float((y_train == 0).sum() / max((y_train == 1).sum(), 1))
     params = {
-        "objective": "binary:logistic", "eval_metric": "auc",
-        "max_depth": 4, "eta": 0.1, "subsample": 0.9,
-        "colsample_bytree": 0.9, "scale_pos_weight": spw, "seed": 42,
+        "objective": args.objective, "eval_metric": args.baseline_eval_metric,
+        "max_depth": args.baseline_max_depth, "eta": args.baseline_eta,
+        "subsample": args.baseline_subsample,
+        "colsample_bytree": args.baseline_colsample_bytree,
+        "scale_pos_weight": spw, "seed": args.seed,
     }
-    return xgb.train(params, dtr, num_boost_round=200).predict(dva)
+    return xgb.train(params, dtr, num_boost_round=args.baseline_num_round).predict(dva)
 
 
 def bootstrap_lift_ci(y_true: np.ndarray,
@@ -668,6 +701,76 @@ def evaluate_slices(model: xgb.Booster,
     return slice_results
 
 
+def save_evaluation_artifacts(model: xgb.Booster,
+                              X_val: np.ndarray,
+                              y_val: np.ndarray,
+                              slice_results: dict,
+                              output_dir: str) -> None:
+    """Write the Lab 3 validation artifacts to the requested evidence directory."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        raise RuntimeError(
+            "matplotlib is required to create the Lab 3 PNG evidence artifacts."
+        ) from exc
+
+    os.makedirs(output_dir, exist_ok=True)
+    dval = xgb.DMatrix(X_val, feature_names=FEATURE_COLUMNS)
+    probabilities = model.predict(dval)
+    # The model's operational decision threshold is 0.5; top-10% metrics are
+    # reported separately and are not a binary classification threshold.
+    predictions = (probabilities >= 0.5).astype(int)
+
+    matrix = confusion_matrix(y_val, predictions, labels=[0, 1])
+    figure, axis = plt.subplots(figsize=(5, 4))
+    image = axis.imshow(matrix, interpolation="nearest", cmap="Blues")
+    figure.colorbar(image, ax=axis)
+    axis.set(
+        xticks=[0, 1], yticks=[0, 1],
+        xticklabels=["Retained", "Churn"],
+        yticklabels=["Retained", "Churn"],
+        xlabel="Predicted label", ylabel="Actual label",
+        title="Churn confusion matrix (threshold = 0.50)",
+    )
+    for row in range(matrix.shape[0]):
+        for column in range(matrix.shape[1]):
+            axis.text(column, row, str(matrix[row, column]), ha="center", va="center",
+                      color="white" if matrix[row, column] > matrix.max() / 2 else "black")
+    figure.tight_layout()
+    figure.savefig(os.path.join(output_dir, "confusion-matrix.png"), dpi=160)
+    plt.close(figure)
+
+    gains = model.get_score(importance_type="gain")
+    importance = pd.Series(
+        {feature: float(gains.get(feature, 0.0)) for feature in FEATURE_COLUMNS}
+    ).sort_values()
+    figure, axis = plt.subplots(figsize=(8, 5))
+    axis.barh(importance.index, importance.values, color="#2563eb")
+    axis.set_xlabel("Average gain")
+    axis.set_title("XGBoost feature importance")
+    figure.tight_layout()
+    figure.savefig(os.path.join(output_dir, "feature-importance.png"), dpi=160)
+    plt.close(figure)
+
+    slice_rows = [
+        {
+            "tier": tier,
+            "n": result["n_samples"],
+            "positives": result["positives"],
+            "auc": result["auc_roc"],
+            "recall": result["recall_top10"],
+            "too_small_to_conclude": result["too_small_to_conclude"],
+        }
+        for tier, result in slice_results.items()
+    ]
+    pd.DataFrame(slice_rows).to_csv(
+        os.path.join(output_dir, "slice-evaluation.csv"), index=False
+    )
+    print(f"Saved confusion matrix, feature importance, and slice evaluation to {output_dir}")
+
+
 # ── Experiment Tracking (MLflow App) ───────────────────────────────────────────
 
 def track_run(args, metrics: dict, scale_pos_weight: float) -> None:
@@ -789,7 +892,7 @@ def save_and_register_model(model: xgb.Booster,
         archive.add(model_path, arcname="xgboost-model")
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    artifact_key = f"artifacts/models/churn/{timestamp}/model.tar.gz"
+    artifact_key = f"{args.artifact_prefix.rstrip('/')}/{timestamp}/model.tar.gz"
     s3_client = boto3.client("s3")
     s3_client.upload_file(model_archive, args.artifacts_bucket, artifact_key)
     model_data_url = f"s3://{args.artifacts_bucket}/{artifact_key}"
@@ -816,7 +919,7 @@ def save_and_register_model(model: xgb.Booster,
         f"Metrics: {json.dumps(scalar_metrics, sort_keys=True)}"
     )
     response = boto3.client("sagemaker").create_model_package(
-        ModelPackageGroupName="northstar-churn-models",
+        ModelPackageGroupName=args.model_package_group_name,
         ModelPackageDescription=description[:1024],
         InferenceSpecification={
             "Containers": [{"Image": image_uri, "ModelDataUrl": model_data_url}],
@@ -868,7 +971,8 @@ def main():
             f"'{SLICE_COLUMN}' is required for loyalty-tier slice evaluation."
         )
     X_train, X_val, y_train, y_val, _, tier_val = train_test_split(
-        X, y, df[SLICE_COLUMN], test_size=0.30, random_state=42, stratify=y
+        X, y, df[SLICE_COLUMN], test_size=args.validation_fraction,
+        random_state=args.seed, stratify=y
     )
     print(f"\nTrain: {len(X_train):,} | Validation: {len(X_val):,}")
 
@@ -876,7 +980,7 @@ def main():
     model = train_model(X_train, y_train, X_val, y_val, args)
 
     # 5. Evaluate
-    baseline_proba = train_recency_baseline(X_train, y_train, X_val)
+    baseline_proba = train_recency_baseline(X_train, y_train, X_val, args)
     metrics = evaluate_model(model, X_val, y_val, baseline_proba)
     metrics["loyalty_tier_slices"] = evaluate_slices(
         model, X_val, y_val, tier_val
@@ -885,20 +989,9 @@ def main():
         tier for tier, result in metrics["loyalty_tier_slices"].items()
         if result["flagged"]
     ]
-    slice_rows = [
-        {
-            "tier": tier,
-            "n": result["n_samples"],
-            "positives": result["positives"],
-            "auc": result["auc_roc"],
-            "recall": result["recall_top10"],
-            "too_small_to_conclude": result["too_small_to_conclude"],
-        }
-        for tier, result in metrics["loyalty_tier_slices"].items()
-    ]
-    slice_path = os.path.join(args.output_data_dir, "slice-evaluation.csv")
-    pd.DataFrame(slice_rows).to_csv(slice_path, index=False)
-    print(f"Slice evaluation saved to {slice_path}")
+    save_evaluation_artifacts(
+        model, X_val, y_val, metrics["loyalty_tier_slices"], args.output_data_dir
+    )
 
     # 6. Save and register
     save_and_register_model(model, metrics, args)

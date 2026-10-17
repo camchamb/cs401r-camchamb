@@ -1,4 +1,3 @@
-2026/10/15 21:48:43 WARNING mlflow.tracking.fluent: Cannot retrieve experiment by name northstar-churn
 ==> Lab 3 evidence  (track B, us-east-1)
 [1/5] Identity
   OK    account 061624868577  --  arn:aws:iam::061624868577:user/Automation
@@ -6,25 +5,29 @@
   OK    docs/lab3-evidence/train-final.log
   OK    docs/lab3-evidence/evaluation_metrics.json
   OK    docs/lab3-evidence/slice-evaluation.csv
-  FAIL  docs/lab3-evidence/confusion-matrix.png  --  missing or empty -- Task 1: at your chosen threshold
-  FAIL  docs/lab3-evidence/feature-importance.png  --  missing or empty -- Task 1: from the registered model
-  FAIL  docs/lab3-evaluation-report.md  --  missing or empty -- Task 1: the evaluation report
-  FAIL  docs/lab3-model-design.md  --  missing or empty -- Task 3: design justification (track declared at top)
-  FAIL  docs/bedrock-access-verification.txt  --  missing or empty -- Task 4: from Pre-Lab 3
-  FAIL  notebooks/lab3-demo.ipynb  --  missing or empty -- Task 2: committed WITH outputs from one clean Restart & Run All
-  FAIL  docs/lab3-evidence/rag_eval.csv  --  missing or empty -- Task 2B: evaluation_harness.py --track B output, renamed
-  FAIL  docs/lab3-evidence/track-b-examples.md  --  missing or empty -- Task 2B: 5 input/output pairs + 2 failure cases with fixes
+  OK    docs/lab3-evidence/confusion-matrix.png
+  OK    docs/lab3-evidence/feature-importance.png
+  OK    docs/lab3-evaluation-report.md
+  OK    docs/lab3-model-design.md
+  OK    docs/bedrock-access-verification.txt
+  OK    notebooks/lab3-demo.ipynb
+  OK    docs/lab3-evidence/rag_eval.csv
+  OK    docs/lab3-evidence/track-b-examples.md
 [3/5] Content checks
   OK    gate precision_top10 >= 0.50
   OK    gate recall_top10 >= 0.25
   OK    gate lift 95% CI excludes zero
   OK    slice-evaluation.csv  --  4 tiers
+  OK    demo notebook  --  4 code cells, one clean run, 4 with output
+  OK    rag_eval.csv  --  4 test cases (harness has 4+)
 [4/5] AWS exports: Athena, MLflow, Model Registry
-  OK    Athena query  --  42e4742f-0a3d-467d-b2b6-b20252afb6e1 SUCCEEDED, 682219 bytes scanned
+  OK    Athena query  --  1c107812-b04d-46d5-ab32-1c99d5d1f3c7 SUCCEEDED, 682219 bytes scanned
   OK    MLflow App reuses Lab 1 infrastructure  --  northstar-dev-MLEngineer, s3://northstar-dev-data-061624868577/artifacts/mlflow/
-  FAIL  MLflow runs  --  0 runs with params AND metrics in 'northstar-churn'; need >= 3
-  OK    Model Registry  --  1 PendingManualApproval version(s); latest v1
-  OK    consistency: registry  --  v1 metadata matches evaluation_metrics.json
+  OK    MLflow runs  --  3 runs with params and metrics in 'northstar-churn'
+  OK    MLflow runs vary  --  eta, max_depth
+  OK    consistency: MLflow  --  a tracked run matches auc_roc=0.7679
+  OK    Model Registry  --  5 PendingManualApproval version(s); latest v5
+  OK    consistency: registry  --  v5 metadata matches evaluation_metrics.json
 [5/5] Summary
-  12 OK, 0 WARN, 9 FAIL
-  Fix every FAIL, re-run, then teardown -> commit -> tag.
+  25 OK, 0 WARN, 0 FAIL
+  Evidence complete. Next: bash scripts/teardown-lab3.sh, then commit and tag lab3-submit.

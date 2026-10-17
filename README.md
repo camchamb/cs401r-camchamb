@@ -62,6 +62,35 @@ The project emphasizes the same production principles developed throughout the l
 
 Project materials and implementation will be added to this repository as the course progresses.
 
+## Lab 3 — Churn model training and evaluation
+
+Lab 3 trains the XGBoost churn model in
+[`models/churn/train.py`](models/churn/train.py). It deliberately reuses the
+Lab 1 data bucket and `MLEngineer` role, plus the Lab 2 Feature Store; it does
+not create a bucket or IAM role. Retrieve those values from the Terraform state
+rather than typing resource names:
+
+```powershell
+$env:ARTIFACTS_BUCKET = terraform -chdir=infrastructure/environments/dev output -raw s3_bucket_name
+$env:FEATURE_GROUP_NAME = terraform -chdir=infrastructure/environments/dev output -raw feature_group_name
+$env:ML_ENGINEER_ROLE_ARN = terraform -chdir=infrastructure/environments/dev output -raw ml_engineer_role_arn
+python models/churn/train.py --max-depth 8 --eta 0.15 --num-round 200 --run-name xgb-depth8-eta015
+```
+
+For a local feature CSV, add `--local-data-path path/to/features.csv`; this
+bypasses the Feature Store query but keeps the same evaluation workflow. All
+training controls (including split seed, early stopping, and baseline controls)
+are command-line options, and environment variables can supply deployment
+paths. Run `python models/churn/train.py --help` for the complete interface.
+
+The training job queries the Lab 2 offline Feature Store, writes Athena query
+results and packaged model artifacts to the Lab 1 bucket under `artifacts/`,
+and registers the packaged model for manual approval. Evaluation metrics,
+confusion matrix, feature importance, and loyalty-tier slices are written to
+`docs/lab3-evidence/` by default. MLflow tracking is enabled by supplying
+`--mlflow-arn` (or `MLFLOW_APP_ARN`); its artifact store is the same bucket's
+`artifacts/mlflow/` prefix.
+
 ## Learning Objectives
 
 By completing this course, I have develop experience with:

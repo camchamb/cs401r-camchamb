@@ -39,10 +39,16 @@ Requirements:
 import argparse
 import json
 import os
+import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
+
+# Allow `python evaluation/evaluation_harness.py` from any working directory.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 import boto3
 import pandas as pd
@@ -524,9 +530,8 @@ class AgentEvaluator:
         missing_required = [t for t in tc.expected_tool_calls if t not in tool_calls]
         unexpected_forbidden = [t for t in tc.forbidden_tool_calls if t in tool_calls]
 
-        # TODO: Check for escalation behavior
-        # This requires inspecting the agent response for escalation language
-        # or a specific "escalate" tool call
+        # A dedicated helper keeps tool-based and prose-based escalation detection
+        # consistent between the managed and local evaluators.
         escalated = detect_escalation(tool_calls, result["response"])
         escalation_correct = (escalated == tc.should_escalate)
 
@@ -681,6 +686,11 @@ def main():
     parser.add_argument("--bedrock-model-id",
                         default=DEFAULT_BEDROCK_MODEL_ID)
     parser.add_argument("--vector-store-endpoint", default=None)
+    parser.add_argument("--retrieval-strategy", choices=["A", "B", "C", "final"],
+                        default="final",
+                        help="Track B retrieval strategy (final uses entitlement + constraint queries).")
+    parser.add_argument("--offline-rag", action="store_true",
+                        help="Use deterministic local embeddings and a policy-safe template; do not use for RAGAS scoring.")
 
     # Track C args
     parser.add_argument("--agent-id", default=None)
@@ -699,18 +709,24 @@ def main():
         print("Track B: Offer Generation RAG Evaluation")
         print("=" * 50)
 
-        # TODO: Wire up your actual RAG invocation function here.
-        # The function receives (customer_context: dict, question: str)
-        # and must return {"answer": str, "contexts": list[str]}
-        def placeholder_rag_fn(context, question):
-            """Replace this with your actual RAG system invocation."""
-            raise NotImplementedError(
-                "TODO: Replace this placeholder with your RAG system invocation.\n"
-                "The function should call your Bedrock + vector store pipeline\n"
-                "and return {'answer': str, 'contexts': list[str]}"
-            )
+        if args.vector_store_endpoint:
+            print("NOTE: --vector-store-endpoint is ignored; Track B uses the local FAISS index.")
 
-        evaluator = RAGEvaluator(rag_invoke_fn=placeholder_rag_fn,
+        try:
+            from rag.offer_rag import OfferRAG
+        except ImportError as exc:
+            raise ImportError(
+                "Track B needs its local RAG dependencies. Install with: "
+                "pip install -r rag/requirements.txt"
+            ) from exc
+
+        rag = OfferRAG(region=args.region, offline=args.offline_rag)
+
+        def invoke_local_rag(context, question):
+            """Adapter from the local pipeline to the harness's RAGAS contract."""
+            return rag.generate(context, question, strategy=args.retrieval_strategy)
+
+        evaluator = RAGEvaluator(rag_invoke_fn=invoke_local_rag,
                                  bedrock_model_id=args.bedrock_model_id,
                                  region=args.region)
         results = evaluator.run(OFFER_TEST_CASES)

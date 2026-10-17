@@ -2,6 +2,82 @@
   "ModelPackageGroupName": "northstar-churn-models",
   "Versions": [
     {
+      "ModelPackageArn": "arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/5",
+      "ModelPackageVersion": 5,
+      "ModelApprovalStatus": "PendingManualApproval",
+      "CreationTime": "2026-10-16 20:45:11.833000-06:00",
+      "ModelPackageDescription": "Churn model trained 2026-10-17. Metrics: {\"auc_roc\": \"0.7679\", \"auc_vs_baseline\": \"0.0454\", \"baseline_auc\": \"0.7225\", \"eval_timestamp\": \"2026-10-17T02:45:08.652389\", \"lift_ci_high\": \"0.0649\", \"lift_ci_low\": \"0.0257\", \"n_val_samples\": \"3000\", \"positive_rate_val\": \"0.22\", \"precision_top10\": \"0.69\", \"recall_top10\": \"0.3136\"}",
+      "CustomerMetadataProperties": {
+        "auc_roc": "0.7679",
+        "auc_vs_baseline": "0.0454",
+        "baseline_auc": "0.7225",
+        "eval_timestamp": "2026-10-17T02:45:08.652389",
+        "lift_ci_high": "0.0649",
+        "lift_ci_low": "0.0257",
+        "n_val_samples": "3000",
+        "positive_rate_val": "0.22",
+        "precision_top10": "0.69",
+        "recall_top10": "0.3136"
+      }
+    },
+    {
+      "ModelPackageArn": "arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/4",
+      "ModelPackageVersion": 4,
+      "ModelApprovalStatus": "PendingManualApproval",
+      "CreationTime": "2026-10-16 20:44:18.322000-06:00",
+      "ModelPackageDescription": "Churn model trained 2026-10-17. Metrics: {\"auc_roc\": \"0.7793\", \"auc_vs_baseline\": \"0.0568\", \"baseline_auc\": \"0.7225\", \"eval_timestamp\": \"2026-10-17T02:44:15.429541\", \"lift_ci_high\": \"0.0756\", \"lift_ci_low\": \"0.0377\", \"n_val_samples\": \"3000\", \"positive_rate_val\": \"0.22\", \"precision_top10\": \"0.71\", \"recall_top10\": \"0.3227\"}",
+      "CustomerMetadataProperties": {
+        "auc_roc": "0.7793",
+        "auc_vs_baseline": "0.0568",
+        "baseline_auc": "0.7225",
+        "eval_timestamp": "2026-10-17T02:44:15.429541",
+        "lift_ci_high": "0.0756",
+        "lift_ci_low": "0.0377",
+        "n_val_samples": "3000",
+        "positive_rate_val": "0.22",
+        "precision_top10": "0.71",
+        "recall_top10": "0.3227"
+      }
+    },
+    {
+      "ModelPackageArn": "arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/3",
+      "ModelPackageVersion": 3,
+      "ModelApprovalStatus": "PendingManualApproval",
+      "CreationTime": "2026-10-16 20:42:16.897000-06:00",
+      "ModelPackageDescription": "Churn model trained 2026-10-17. Metrics: {\"auc_roc\": \"0.7835\", \"auc_vs_baseline\": \"0.061\", \"baseline_auc\": \"0.7225\", \"eval_timestamp\": \"2026-10-17T02:42:00.207094\", \"lift_ci_high\": \"0.0801\", \"lift_ci_low\": \"0.0423\", \"n_val_samples\": \"3000\", \"positive_rate_val\": \"0.22\", \"precision_top10\": \"0.7233\", \"recall_top10\": \"0.3288\"}",
+      "CustomerMetadataProperties": {
+        "auc_roc": "0.7835",
+        "auc_vs_baseline": "0.061",
+        "baseline_auc": "0.7225",
+        "eval_timestamp": "2026-10-17T02:42:00.207094",
+        "lift_ci_high": "0.0801",
+        "lift_ci_low": "0.0423",
+        "n_val_samples": "3000",
+        "positive_rate_val": "0.22",
+        "precision_top10": "0.7233",
+        "recall_top10": "0.3288"
+      }
+    },
+    {
+      "ModelPackageArn": "arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/2",
+      "ModelPackageVersion": 2,
+      "ModelApprovalStatus": "PendingManualApproval",
+      "CreationTime": "2026-10-16 18:25:23.146000-06:00",
+      "ModelPackageDescription": "Churn model trained 2026-10-17. Metrics: {\"auc_roc\": \"0.7793\", \"auc_vs_baseline\": \"0.0568\", \"baseline_auc\": \"0.7225\", \"eval_timestamp\": \"2026-10-17T00:25:11.807327\", \"lift_ci_high\": \"0.0756\", \"lift_ci_low\": \"0.0377\", \"n_val_samples\": \"3000\", \"positive_rate_val\": \"0.22\", \"precision_top10\": \"0.71\", \"recall_top10\": \"0.3227\"}",
+      "CustomerMetadataProperties": {
+        "auc_roc": "0.7793",
+        "auc_vs_baseline": "0.0568",
+        "baseline_auc": "0.7225",
+        "eval_timestamp": "2026-10-17T00:25:11.807327",
+        "lift_ci_high": "0.0756",
+        "lift_ci_low": "0.0377",
+        "n_val_samples": "3000",
+        "positive_rate_val": "0.22",
+        "precision_top10": "0.71",
+        "recall_top10": "0.3227"
+      }
+    },
+    {
       "ModelPackageArn": "arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/1",
       "ModelPackageVersion": 1,
       "ModelApprovalStatus": "PendingManualApproval",

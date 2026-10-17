@@ -1,6 +1,6 @@
 sagemaker.config INFO - Not applying SDK defaults from location: C:\ProgramData\sagemaker\sagemaker\config.yaml
 sagemaker.config INFO - Not applying SDK defaults from location: C:\Users\camer\AppData\Local\sagemaker\sagemaker\config.yaml
-C:\Python314\Lib\site-packages\sagemaker\__init__.py:86: SageMakerV2DeprecationWarning: You are using the SageMaker Python SDK v2, which is on path of deprecation. v3 is the actively developed major version.
+C:\Users\camer\dev\cs401r-camchamb\.venv\Lib\site-packages\sagemaker\__init__.py:86: SageMakerV2DeprecationWarning: You are using the SageMaker Python SDK v2, which is on path of deprecation. v3 is the actively developed major version.
 See https://github.com/aws/sagemaker-python-sdk/blob/master/migration.md for the migration guide. Set SAGEMAKER_SUPPRESS_V2_WARNING=1 to silence this warning.
   warn_v2_deprecation()
 You are using the SageMaker Python SDK v2, which is on path of deprecation. v3 is the actively developed major version.
@@ -8,7 +8,7 @@ See https://github.com/aws/sagemaker-python-sdk/blob/master/migration.md for the
 ============================================================
 NorthStar Churn Prediction — Training Script
 ============================================================
-Athena QueryExecutionId: 42e4742f-0a3d-467d-b2b6-b20252afb6e1
+Athena QueryExecutionId: 1c107812-b04d-46d5-ab32-1c99d5d1f3c7
 Preprocessing 9,999 samples...
   Samples after dropping missing labels: 9,999
   Missing feature values imputed: 0
@@ -23,8 +23,8 @@ Training XGBoost with params: {
     "logloss",
     "auc"
   ],
-  "max_depth": 6,
-  "eta": 0.1,
+  "max_depth": 8,
+  "eta": 0.15,
   "min_child_weight": 5,
   "subsample": 0.8,
   "colsample_bytree": 0.8,
@@ -32,37 +32,36 @@ Training XGBoost with params: {
   "seed": 42,
   "verbosity": 1
 }
-[0]	train-logloss:0.67033	train-auc:0.76730	validation-logloss:0.67308	validation-auc:0.72207
-[25]	train-logloss:0.48019	train-auc:0.86200	validation-logloss:0.51941	validation-auc:0.78100
-[30]	train-logloss:0.46861	train-auc:0.86885	validation-logloss:0.51497	validation-auc:0.77929
-C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:570: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+[0]	train-logloss:0.65592	train-auc:0.78703	validation-logloss:0.66401	validation-auc:0.69816
+[25]	train-logloss:0.39568	train-auc:0.93415	validation-logloss:0.49875	validation-auc:0.77001
+[30]	train-logloss:0.37727	train-auc:0.94495	validation-logloss:0.49590	validation-auc:0.76792
+C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:571: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
   "eval_timestamp": datetime.utcnow().isoformat(),
-C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:767: UserWarning: [21:39:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1553: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:838: UserWarning: [20:45:09] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1553: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
   model.save_model(model_path)
-C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:780: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+C:\Users\camer\dev\cs401r-camchamb\models\churn\train.py:851: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
   "training_date": datetime.utcnow().isoformat(),
-2026/10/15 21:39:56 INFO mlflow.tracking.fluent: Experiment with name 'northstar-churn-lab3' does not exist. Creating a new experiment.
 
 ── Evaluation Results ──────────────────────────────
-  precision_top10          : 0.7100  (threshold: 0.5000)  ✓ PASS
-  recall_top10             : 0.3227  (threshold: 0.2500)  ✓ PASS
-  auc_lift 95% CI          : [0.0377, 0.0756]  (must exclude 0)  ✓ PASS
+  precision_top10          : 0.6900  (threshold: 0.5000)  ✓ PASS
+  recall_top10             : 0.3136  (threshold: 0.2500)  ✓ PASS
+  auc_lift 95% CI          : [0.0257, 0.0649]  (must exclude 0)  ✓ PASS
   All thresholds passed ✓
 
 ── Slice Evaluation ─────────────────────────────────
-  Aggregate recall@10%: 0.3227
-  Silver: n=1139, AUC=0.7098, recall@10%=0.2522, positives=226 [OK]
-  Platinum: n=307, AUC=0.8811, recall@10%=0.4762, positives=21 [OK]
-  Bronze: n=1071, AUC=0.7521, recall@10%=0.2881, positives=361 [OK]
-  Gold: n=483, AUC=0.7423, recall@10%=0.3269, positives=52 [OK]
-Slice evaluation saved to docs/lab3-evidence\slice-evaluation.csv
+  Aggregate recall@10%: 0.3136
+  Silver: n=1139, AUC=0.6952, recall@10%=0.2522, positives=226 [OK]
+  Platinum: n=307, AUC=0.8395, recall@10%=0.4762, positives=21 [OK]
+  Bronze: n=1071, AUC=0.7518, recall@10%=0.2881, positives=361 [OK]
+  Gold: n=483, AUC=0.7217, recall@10%=0.2308, positives=52 [OK]
+Saved confusion matrix, feature importance, and slice evaluation to docs/lab3-evidence
 
 ✓ Model saved to ./model\model.xgb
-Registered pending-approval model package: arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/1
-🏃 View run final-athena-graded-run at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/1/runs/ad35ae06c86f48dab25ea5c200a66fa7
-🧪 View experiment at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/1
-Logged run to MLflow experiment 'northstar-churn-lab3'.
+Registered pending-approval model package: arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/5
+🏃 View run xgb-depth8-eta015-final at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/2/runs/fe80fe8aed91439b8b4979d7e9082293
+🧪 View experiment at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/2
+Logged run to MLflow experiment 'northstar-churn'.
 
 ============================================================
-Training complete. AUC-ROC: 0.7793
+Training complete. AUC-ROC: 0.7679
 ============================================================

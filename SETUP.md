@@ -136,6 +136,7 @@ aws s3 ls \
 s3://northstar-dev-data-$(aws sts get-caller-identity --query Account --output text)/features/customers/ \
 --recursive
 
+
 # Test
 ./scripts/verify-lab1.sh
 
