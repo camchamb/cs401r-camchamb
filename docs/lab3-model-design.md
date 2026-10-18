@@ -1,35 +1,83 @@
 # Lab 3 Track B — Policy-grounded retention offers
 
-## Design
+## Churn-model choice
 
-`rag/offer_rag.py` uses Amazon Titan Text Embeddings V2 (`amazon.titan-embed-text-v2:0`) to embed the four supplied policy documents. Titan was selected because it is available in the existing Bedrock account, produces 1,024-dimension vectors, and keeps embeddings and generation under the same IAM and billing boundary. The vectors are normalized and indexed in a local FAISS `IndexFlatIP`; this is a free, exact cosine-similarity index appropriate for this small policy corpus. OpenSearch Serverless would add operational cost and complexity without improving this corpus.
+NorthStar has a small, structured problem: 9,999 customer records and 13
+available tabular fields. The final matrix uses 11 predictors;
+`churn_risk_score` is the recency comparison and `loyalty_tier` is reserved for
+slice evaluation. Gradient-boosted trees can learn plausible threshold effects
+and interactions--a long purchase gap means something different for a frequent
+shopper than a new customer--without manual feature crosses. They also handle
+the mix of recency, counts, dollars, and ratios with little preprocessing.
 
-Documents are split on paragraph boundaries into chunks of at most 900 characters with a 150-character overlap. The overlap preserves a heading/table relationship or a sentence crossing a paragraph boundary, while the small chunk size keeps retrieval focused on a specific entitlement or restriction. Every chunk has a stable `POL-…-NNN` or `KB-…-NNN` ID. The FAQ is indexed for recall, but generation instructions treat the governing policy excerpts as authoritative.
+I did not choose logistic regression because its linear log-odds form would
+need manually chosen transformations and interaction terms to represent those
+relationships. It would be a valuable benchmark, but not the final choice if
+it gives up useful ranking quality. A neural network has the opposite problem:
+with only about 7,000 training rows, 11 inputs, and no unstructured data, its
+extra capacity is more likely to add tuning and overfitting risk than signal.
 
-The production generator is Claude Haiku 4.5 through the `us.anthropic.claude-haiku-4-5-20251001-v1:0` Bedrock inference profile. Haiku is suitable for short, constrained copy and makes an inexpensive per-customer call. The request sets `temperature=0` only; it deliberately does not set `top_p`, because Claude 4+ rejects the pair. The prompt requires 2–3 sentences, a category from `top_categories`, a policy-supported incentive, a 45-day single-use/account-tied offer, and no invented discounts, codes, products, availability, or return/shipping exceptions.
+Interpretability matters to retention, so global gain and named inputs support
+a reviewable top-decile queue; I would add local SHAP explanations before
+interventions. I would switch to regularized logistic regression if its
+out-of-sample ranking were effectively tied and its coefficients were more
+useful to reviewers. I would consider a neural model only with substantially
+more histories, sequential event data, and a cross-validated improvement over
+trees that survived calibration and explanation review.
 
-The final retriever uses two passes: an entitlement query for the feature-store tier and a constraint query for final sale/retention-offer restrictions. Results are deduplicated from both passes. I did not add a re-ranker: with fewer than 60 chunks, exact FAISS search plus the two targeted queries is transparent and auditable; a second model call would add latency and cost with no measured evidence of benefit. Strategies A (entitlement), B (constraints), and C (hybrid) remain selectable in `rag/run_evaluation.py` so they can be measured with the supplied harness.
+## What the features bought
 
-## Tier discrepancy handling
+The held-out 3,000-customer test set makes the feature value concrete. The
+recency-only XGBoost baseline reached AUC **0.7225**. The full 11-feature model
+reached **0.7679**, a **+0.0454** lift; a 2,000-replicate paired bootstrap gave
+a 95% interval of **[+0.0257, +0.0649]**. This is modest, not a transformation:
+recency already contains most of the usable churn signal. It is nevertheless
+large enough to be credible because the interval excludes zero. At the operating
+point that matters to the team, the top 10% has 0.6900 precision and captures
+0.3136 of churners.
 
-The Lab 2 feature-store `loyalty_tier` is derived from total lifetime value, whereas `POL-LOY-011` uses trailing 12-month merchandise spend. The pipeline supplies the feature-store tier to guide retrieval, but phrases tier-dependent benefits conditionally in production (for example, “if your current tier is Gold”). The system of record should replace that value at send time. This avoids claiming an entitlement for a near-threshold customer that the policy tier does not actually grant.
+Average-gain importance supports that story. `days_since_last_purchase` is the
+dominant feature (about 29 average gain), followed by
+`purchase_frequency_180d` (about 20) and `purchase_frequency_90d` (about 11).
+Those frequency windows tell us whether an apparently lapsed customer normally
+buys often. Six-month basket size, lifetime value, 90-day spend, channel ratio,
+category diversity, and tenure add smaller but nonzero gain
+(roughly 7–9 each); they help distinguish similarly recent customers with
+different engagement and value. `purchase_frequency_30d` has essentially zero
+gain, and `avg_order_value` is also near zero in this fit. They are decorative
+as currently engineered, so I would remove or redesign them only after checking
+their stability across future time splits; retaining them now does not justify a
+claim that every feature mattered.
 
-## Prompt-template corrections
+The complete metric and slice discussion belongs in the separate
+[`lab3-evaluation-report.md`](lab3-evaluation-report.md), with the underlying
+run in [`mlflow-runs.csv`](lab3-evidence/mlflow-runs.csv).
 
-The three planted Template 3 errors were corrected:
+## Why retrieval-augmented generation, not fine-tuning
 
-- Gold spans $2,000–$4,999.99, not $2,000–$9,999.99.
-- Platinum begins at $5,000, not $10,000.
-- No tier receives free expedited shipping; it is charged at full rate for every tier.
+Track B generates retention copy from a small, changing loyalty, shipping,
+return, and FAQ corpus. RAG keeps policy outside model weights: Titan embeddings
+retrieve stable-ID chunks into Claude Haiku, constrained to cited entitlements,
+customer category, and 45-day single-use/account-tied terms. With fewer than
+60 chunks, exact FAISS cosine retrieval is transparent and auditable.
 
-## Evaluation method and limits
+Fine-tuning is the main rejected alternative. It can teach a voice, but cannot
+keep changing policy current or provide per-answer evidence; a tier update would
+require new examples and retraining, while a fluent model could still invent a
+discount. Retrieval can be corrected and re-indexed without changing weights.
+Its primary production risk is an incomplete or wrong entitlement yielding a
+confident unsupported offer. Because feature-store tier is lifetime-value-based
+while policy tier is trailing-12-month spend, tier claims stay conditional until
+the system-of-record tier is supplied at send time.
 
-Run the supplied evaluator with `python -m rag.run_evaluation --output docs/lab3-evidence/rag_eval.csv` after installing `rag/requirements.txt`, then repeat two more times and report the mean/range below. `RAGEvaluator` explicitly passes the Bedrock LLM and Titan embeddings to `ragas.evaluate`, so it never defaults to an unavailable OpenAI judge. The pipeline adds the customer profile as a `contexts` entry because the answer relies on it; without that context, the judge marks category and tier facts as unsupported.
+## With 10× the time or data
 
-No production RAGAS score is claimed in this repository yet: this workspace has no AWS credentials, and its Windows Python 3.14 environment cannot currently install RAGAS's `scikit-network` dependency. Do not substitute an offline/template run for RAGAS results. Run the pinned requirements in the course's supported Python environment, record the exact Haiku judge model, three runs, mean/range, and rerun any NaN case caused by throttling. Faithfulness is expected to be the most actionable metric; answer relevance is constrained by the harness asking an instruction rather than a natural customer question, and context recall is capped by grading commentary absent from the corpus.
-
-| Metric | Run 1 | Run 2 | Run 3 | Mean | Range |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Faithfulness | pending | pending | pending | pending | pending |
-| Answer relevancy | pending | pending | pending | pending | pending |
-| Context recall | pending | pending | pending | pending | pending |
+I would replace the random split with a rolling, time-based evaluation and run
+an offer-level experiment: randomly hold out eligible high-risk customers,
+measure incremental repurchase and margin rather than only churn-label AUC, and
+learn an uplift policy for which offer to send. On the RAG side, I would add a
+structured entitlement service as the source of truth and a post-generation
+claim validator that maps every benefit, dollar amount, and expiry to retrieved
+policy or an approved campaign record. That changes the architecture from
+“retrieve and instruct” to “retrieve, validate, then send,” which directly
+addresses the costly failure mode rather than merely collecting more tests.
