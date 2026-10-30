@@ -138,6 +138,14 @@ resource "aws_iam_role_policy" "ml_engineer" {
       },
 
       {
+        Sid       = "PassSelfToSageMaker"
+        Effect    = "Allow"
+        Action    = ["iam:PassRole"]
+        Resource  = aws_iam_role.ml_engineer.arn
+        Condition = { StringEquals = { "iam:PassedToService" = "sagemaker.amazonaws.com" } }
+      },
+
+      {
         Sid    = "S3BucketList"
         Effect = "Allow"
         Action = [
