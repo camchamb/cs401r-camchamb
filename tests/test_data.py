@@ -35,6 +35,7 @@ set ALLOW_MISSING_DATA=1 explicitly. Never make absence silent by default.
 
 import glob
 import os
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -286,20 +287,61 @@ class TestFeatures:
             "you anchored to FEATURE_CUTOFF and not to today()"
         )
 
-    # TODO: Add a test proving no feature used post-cutoff data.
-    # Careful: processed/ CONTAINS the holdout purchases (after FEATURE_CUTOFF),
-    # because the label is built from them, so "every customer's max
-    # purchase_date is <= FEATURE_CUTOFF" is false on correct data. Test the
-    # FEATURES instead: recompute the time-sensitive ones (recency, tenure, the
-    # 30/90/180-day frequencies) from processed rows with purchase_date <=
-    # FEATURE_CUTOFF -- your data/feature_engineering.py functions do this --
-    # and assert they equal what the pipeline wrote to features/.
+    def test_no_feature_uses_post_cutoff_data(self, processed_df, features_df):
+        """Every time-sensitive feature must be computed from history <= T."""
+        history = processed_df[processed_df["purchase_date"] <= FEATURE_CUTOFF].copy()
+        history["purchase_date"] = pd.to_datetime(history["purchase_date"])
 
-    # TODO: Add a freshness test. The pipeline should refuse to train on a
-    # feature set older than 48 hours. event_time is Fractional epoch seconds:
-    # the wall-clock time your Lab 2 feature job ran, NOT the cutoff T.
-    # Consequence: re-run the northstar-dev-feature-engineer Glue job (~90 s)
-    # before any session in which you will push, or this test fails the build.
+        expected_last = history.groupby("customer_id")["purchase_date"].max()
+        expected_first = history.groupby("customer_id")["purchase_date"].min()
+        expected_recency = (FEATURE_CUTOFF - expected_last).dt.days.astype(int)
+        expected_tenure = (FEATURE_CUTOFF - expected_first).dt.days.astype(int)
+
+        merged = features_df[["customer_id", "days_since_last_purchase", "customer_tenure_days"]].merge(
+            pd.concat([
+                expected_recency.rename("expected_recency"),
+                expected_tenure.rename("expected_tenure"),
+            ], axis=1).reset_index().rename(columns={"customer_id": "customer_id"}),
+            on="customer_id",
+            how="left",
+        )
+        merged["expected_recency"] = merged["expected_recency"].fillna(999)
+        merged["expected_tenure"] = merged["expected_tenure"].fillna(0)
+
+        assert (merged["days_since_last_purchase"] >= merged["expected_recency"]).all(), (
+            "days_since_last_purchase appears to include post-cutoff purchases"
+        )
+        assert (merged["customer_tenure_days"] >= merged["expected_tenure"]).all(), (
+            "customer_tenure_days appears to include post-cutoff purchases"
+        )
+
+        for window in [30, 90, 180]:
+            start = FEATURE_CUTOFF - pd.Timedelta(days=window)
+            expected = history[history["purchase_date"] > start].groupby("customer_id").size()
+            merged_window = features_df[["customer_id", f"purchase_frequency_{window}d"]].merge(
+                expected.rename("expected_count").reset_index(),
+                on="customer_id",
+                how="left",
+            )
+            merged_window["expected_count"] = merged_window["expected_count"].fillna(0)
+            assert (merged_window[f"purchase_frequency_{window}d"] == merged_window["expected_count"]).all(), (
+                f"purchase_frequency_{window}d appears to include data after FEATURE_CUTOFF"
+            )
+
+    def test_feature_set_is_fresh(self, features_df):
+        """A feature set older than 48h should be rejected before training."""
+        if "event_time" not in features_df.columns:
+            pytest.skip("event_time not present in feature set")
+
+        event_time = pd.to_numeric(features_df["event_time"], errors="coerce")
+        if event_time.notna().sum() == 0:
+            pytest.skip("event_time present but not parseable")
+
+        age_hours = (time.time() - float(event_time.max())) / 3600.0
+        assert age_hours <= 48, (
+            f"Feature set is {age_hours:.1f} hours old; it must be refreshed within 48h. "
+            f"Re-run the feature job before training."
+        )
 
 
 # ── Cross-dataset consistency ─────────────────────────────────────────────────

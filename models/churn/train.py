@@ -446,6 +446,10 @@ def train_model(X_train: np.ndarray,
         "subsample": args.subsample,
         "colsample_bytree": args.colsample_bytree,
         "scale_pos_weight": spw,
+        "monotone_constraints": tuple(
+            1 if feature == "days_since_last_purchase" else 0
+            for feature in FEATURE_COLUMNS
+        ),
         "seed": args.seed,
         "verbosity": args.verbosity,
     }
