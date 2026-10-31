@@ -424,3 +424,34 @@ class TestStoredMetricsGate:
             f"The reference dataset measures 22.0%. Check that your validation "
             f"split is stratified."
         )
+
+TOLERANCE = 0.02
+
+def regresses(new_auc, champ_auc, tolerance=TOLERANCE):
+    """True if the candidate is worse than the champion by more than tolerance."""
+    # TODO
+
+def champion_from_registry(sm=None, s3=None, group="northstar-churn-models"):
+    """Return (package_arn, champion_auc), or None if nothing is Approved yet."""
+    sm = sm or boto3.client("sagemaker")
+    s3 = s3 or boto3.client("s3")
+    # TODO: sm.list_model_packages(ModelPackageGroupName=group,
+    #     ModelApprovalStatus="Approved", SortBy="CreationTime",
+    #     SortOrder="Descending", MaxResults=1)
+    # TODO: empty ModelPackageSummaryList -> return None
+    # TODO: pkg = sm.describe_model_package(ModelPackageName=arn)
+    # TODO: in pkg["ModelMetrics"], find the S3Uri ending in
+    #     evaluation_metrics.json; s3.get_object it; json.loads; read "auc_roc"
+    # Don't catch exceptions: an unreadable registry should FAIL the test.
+
+class TestStoredMetricsGate:   # existing class: add this method
+    def test_candidate_not_worse_than_champion(self, eval_metrics):
+        champ = champion_from_registry()
+        if champ is None:
+            pytest.skip("no Approved package yet")
+        arn, champ_auc = champ
+        version = arn.rsplit("/", 1)[-1]
+        new_auc = float(eval_metrics["auc_roc"])
+        warnings.warn(f"champion v{version} auc={champ_auc:.4f}; "
+                      f"candidate auc={new_auc:.4f}")
+        # TODO: assert not regresses(...), with a helpful failure message
