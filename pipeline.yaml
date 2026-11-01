@@ -351,10 +351,24 @@ Resources:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       Name: !Sub "${ProjectName}-pipeline"
+      PipelineType: V2
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactsBucket
+
+      # Use an explicit push trigger instead of relying on the connection's
+      # implicit/default change detection. Besides making the branch filter
+      # visible in the stack, updating this configuration makes CodePipeline
+      # register the GitHub webhook subscription for this pipeline again.
+      Triggers:
+        - ProviderType: CodeStarSourceConnection
+          GitConfiguration:
+            SourceActionName: GitHubSource
+            Push:
+              - Branches:
+                  Includes:
+                    - !Ref GitHubBranch
 
       Stages:
 
@@ -372,7 +386,9 @@ Resources:
                 FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
                 BranchName: !Ref GitHubBranch
                 OutputArtifactFormat: CODE_ZIP
-                DetectChanges: true
+                # Pipeline-level Triggers replace default change detection.
+                # Keep this false so one push cannot start two executions.
+                DetectChanges: false
               OutputArtifacts:
                 - Name: SourceArtifact
 
