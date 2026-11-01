@@ -123,7 +123,6 @@ class TestRawData:
     file that is already clean means the pipeline is never exercised."""
 
     def test_schema(self, raw_df):
-        assert False, "Intentional failure for Lab 4 demonstration"
         missing = [c for c in RAW_COLUMNS if c not in raw_df.columns]
         assert not missing, f"Raw CSV missing columns: {missing}"
 
