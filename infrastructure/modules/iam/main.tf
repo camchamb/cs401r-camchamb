@@ -68,6 +68,50 @@ resource "aws_iam_role_policy" "ml_engineer" {
 
     Statement = [
       {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:AddTags"
+        ]
+        Resource = [
+          "arn:aws:sagemaker:us-east-1:061624868577:training-job/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:AddTags",
+          "sagemaker:DescribeTrainingJob"
+        ]
+        Resource = [
+          "arn:aws:sagemaker:us-east-1:061624868577:training-job/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:AddTags",
+          "sagemaker:CreateModelPackageGroup",
+          "sagemaker:DescribeModelPackageGroup"
+        ]
+        Resource = [
+          "arn:aws:sagemaker:us-east-1:061624868577:model-package-group/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:AddTags",
+          "sagemaker:CreateModelPackage",
+          "sagemaker:DescribeModelPackage",
+          "sagemaker:ListModelPackages",
+          "sagemaker:UpdateModelPackage"
+        ]
+        Resource = [
+          "arn:aws:sagemaker:us-east-1:061624868577:model-package/*",
+          "arn:aws:sagemaker:us-east-1:061624868577:model-package-group/*"
+        ]
+      },
+      {
         Sid    = "SageMakerCore"
         Effect = "Allow"
 
