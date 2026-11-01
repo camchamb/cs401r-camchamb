@@ -1,0 +1,125 @@
+CodeBuild project: northstar-ci
+Build: northstar-ci:ff1c664b-a2a0-4b43-9d24-da2873dca436
+Commit: 8102de59e7967e3434c4bf23cb1d9d41233c38e5
+Status: SUCCEEDED
+CloudWatch log group: /aws/codebuild/northstar-ci
+CloudWatch log stream: ff1c664b-a2a0-4b43-9d24-da2873dca436
+
+Phase complete: DOWNLOAD_SOURCE State: SUCCEEDED
+Entering phase INSTALL
+Commit SHA 8102de59e7967e3434c4bf23cb1d9d41233c38e5
+Phase complete: INSTALL State: SUCCEEDED
+Entering phase PRE_BUILD
+PRE-BUILD PHASE - Tests
+
+Running data validation tests...
+collecting ... collected 28 items
+tests/test_data.py::TestRawData::test_schema PASSED
+tests/test_data.py::TestRawData::test_row_count_plausible PASSED
+tests/test_data.py::TestRawData::test_contains_defects_to_clean PASSED
+tests/test_data.py::TestRawData::test_contains_mixed_date_formats PASSED
+tests/test_data.py::TestProcessedData::test_schema PASSED
+tests/test_data.py::TestProcessedData::test_no_null_customer_id PASSED
+tests/test_data.py::TestProcessedData::test_no_duplicate_transactions PASSED
+tests/test_data.py::TestProcessedData::test_all_dates_parsed PASSED
+tests/test_data.py::TestProcessedData::test_no_null_order_value PASSED
+tests/test_data.py::TestProcessedData::test_order_value_in_range PASSED
+tests/test_data.py::TestProcessedData::test_customer_id_whitespace_trimmed PASSED
+tests/test_data.py::TestProcessedData::test_channel_values_valid PASSED
+tests/test_data.py::TestProcessedData::test_transaction_grain_preserved PASSED
+tests/test_data.py::TestFeatures::test_schema PASSED
+tests/test_data.py::TestFeatures::test_one_row_per_customer PASSED
+tests/test_data.py::TestFeatures::test_no_nulls PASSED
+tests/test_data.py::TestFeatures::test_all_tiers_present PASSED
+tests/test_data.py::TestFeatures::test_churn_label_binary PASSED
+tests/test_data.py::TestFeatures::test_churn_rate_plausible PASSED
+tests/test_data.py::TestFeatures::test_bounded_features_in_range PASSED
+tests/test_data.py::TestFeatures::test_non_negative_counts PASSED
+tests/test_data.py::TestFeatures::test_frequency_windows_are_monotonic PASSED
+tests/test_data.py::TestFeatures::test_label_not_trivially_separable PASSED
+tests/test_data.py::TestFeatures::test_recency_within_observation_window PASSED
+tests/test_data.py::TestFeatures::test_no_feature_uses_post_cutoff_data PASSED
+tests/test_data.py::TestFeatures::test_feature_set_is_fresh PASSED
+tests/test_data.py::TestConsistency::test_feature_customers_are_subset_of_processed PASSED
+tests/test_data.py::TestConsistency::test_row_survival_rate PASSED
+============================== 28 passed in 0.92s ==============================
+
+Running feature engineering tests...
+collecting ... collected 18 items
+tests/test_features.py::TestRecencyFeatures::test_days_since_last_purchase_correct PASSED
+tests/test_features.py::TestRecencyFeatures::test_recent_buyer_low_recency PASSED
+tests/test_features.py::TestRecencyFeatures::test_no_negative_recency PASSED
+tests/test_features.py::TestRecencyFeatures::test_customer_with_no_transactions_returns_sentinel PASSED
+tests/test_features.py::TestFrequencyFeatures::test_frequency_90d_correct PASSED
+tests/test_features.py::TestFrequencyFeatures::test_frequency_90d_excludes_older_transactions PASSED
+tests/test_features.py::TestFrequencyFeatures::test_frequency_is_non_negative PASSED
+tests/test_features.py::TestFrequencyFeatures::test_frequency_180d_gte_frequency_90d PASSED
+tests/test_features.py::TestMonetaryFeatures::test_avg_basket_size_correct PASSED
+tests/test_features.py::TestMonetaryFeatures::test_total_spend_90d_is_sum_not_average PASSED
+tests/test_features.py::TestMonetaryFeatures::test_monetary_features_non_negative PASSED
+tests/test_features.py::TestBehavioralFeatures::test_category_diversity_score_range PASSED
+tests/test_features.py::TestBehavioralFeatures::test_single_category_buyer_has_low_diversity PASSED
+tests/test_features.py::TestBehavioralFeatures::test_multi_category_buyer_has_high_diversity PASSED
+tests/test_features.py::TestBehavioralFeatures::test_online_to_store_ratio_non_negative PASSED
+tests/test_features.py::TestFullFeatureSet::test_all_required_features_present PASSED
+tests/test_features.py::TestFullFeatureSet::test_no_null_features_for_known_customers PASSED
+tests/test_features.py::TestFullFeatureSet::test_output_has_customer_id_column PASSED
+============================== 18 passed in 0.48s ==============================
+Phase complete: PRE_BUILD State: SUCCEEDED
+
+Entering phase BUILD
+BUILD PHASE - Train and evaluate
+[0s] Pipeline status: Executing
+[30s] Pipeline status: Executing
+[60s] Pipeline status: Executing
+[90s] Pipeline status: Executing
+[120s] Pipeline status: Executing
+[150s] Pipeline status: Executing
+[180s] Pipeline status: Executing
+[210s] Pipeline status: Succeeded
+Pipeline succeeded
+Registered: arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/8
+
+Evaluation metrics:
+  "auc_roc": 0.7855,
+  "precision_top10": 0.7167,
+  "recall_top10": 0.3258
+
+collecting ... collected 23 items
+tests/test_model.py::TestModelLoading::test_model_loads_successfully PASSED
+tests/test_model.py::TestModelLoading::test_model_has_expected_feature_count PASSED
+tests/test_model.py::TestModelLoading::test_model_metadata_exists PASSED
+tests/test_model.py::TestModelLoading::test_model_metadata_has_evaluation_metrics PASSED
+tests/test_model.py::TestModelLoading::test_metadata_records_feature_list PASSED
+tests/test_model.py::TestPredictionOutput::test_predictions_are_probabilities PASSED
+tests/test_model.py::TestPredictionOutput::test_predictions_have_no_nans PASSED
+tests/test_model.py::TestPredictionOutput::test_predictions_use_full_probability_range PASSED
+tests/test_model.py::TestPredictionOutput::test_single_sample_inference PASSED
+tests/test_model.py::TestModelDiscrimination::test_churners_score_higher_than_retainers PASSED
+tests/test_model.py::TestModelDiscrimination::test_auc_roc_on_synthetic_data PASSED
+tests/test_model.py::TestModelRobustness::test_model_handles_missing_values PASSED
+tests/test_model.py::TestModelRobustness::test_model_monotone_on_recency PASSED
+tests/test_model.py::TestModelRobustness::test_prediction_stability_across_calls PASSED
+tests/test_model.py::TestStoredMetricsGate::test_precision_top10_meets_threshold PASSED
+tests/test_model.py::TestStoredMetricsGate::test_recall_top10_meets_threshold PASSED
+tests/test_model.py::TestStoredMetricsGate::test_model_beats_baseline PASSED
+tests/test_model.py::TestStoredMetricsGate::test_positive_rate_is_realistic PASSED
+tests/test_model.py::TestStoredMetricsGate::test_candidate_not_worse_than_champion PASSED
+tests/test_fairness.py::test_tier_recall_gap_finds_extreme_slices PASSED
+tests/test_fairness.py::test_fairness_flag_warns_above_ten_percentage_points PASSED
+tests/test_fairness.py::test_no_fairness_warning_at_ten_percentage_points PASSED
+tests/test_fairness.py::test_loyalty_tier_recall_gap_is_reported PASSED
+
+warnings summary
+tests/test_model.py::TestStoredMetricsGate::test_candidate_not_worse_than_champion
+  tests/test_model.py:439: UserWarning: champion v6 auc=0.7855; candidate auc=0.7855
+tests/test_fairness.py::test_loyalty_tier_recall_gap_is_reported
+  tests/test_fairness.py:32: UserWarning: FAIRNESS FLAG: loyalty-tier recall@top10 gap is 13.3% (Platinum=0.3810, Silver=0.2478); review before approval.
+======================== 23 passed, 4 warnings in 1.54s ========================
+
+Phase complete: BUILD State: SUCCEEDED
+Entering phase POST_BUILD
+=== POST-BUILD PHASE ===
+Build status 1
+Phase complete: POST_BUILD State: SUCCEEDED
+Phase complete: UPLOAD_ARTIFACTS State: SUCCEEDED

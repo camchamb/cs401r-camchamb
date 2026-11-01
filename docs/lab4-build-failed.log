@@ -1,0 +1,30 @@
+CodeBuild project: northstar-ci
+Build: northstar-ci:30e20b06-2689-465b-83e2-e6cc6e09cf68
+Commit: 239c718637602ed75366b4fdbfcae433df7ebcd7
+Status: FAILED
+CloudWatch log group: /aws/codebuild/northstar-ci
+CloudWatch log stream: 30e20b06-2689-465b-83e2-e6cc6e09cf68
+
+PRE-BUILD PHASE - Tests
+Running data validation tests...
+collecting ... collected 28 items
+
+tests/test_data.py::TestRawData::test_schema FAILED                      [  3%]
+tests/test_data.py::TestRawData::test_row_count_plausible PASSED         [  7%]
+tests/test_data.py::TestRawData::test_contains_defects_to_clean PASSED   [ 10%]
+
+=================================== FAILURES ===================================
+___________________________ TestRawData.test_schema ____________________________
+tests/test_data.py:126: in test_schema
+    assert False, "Intentional failure for Lab 4 demonstration"
+E   AssertionError: Intentional failure for Lab 4 demonstration
+E   assert False
+=========================== short test summary info ============================
+FAILED tests/test_data.py::TestRawData::test_schema - AssertionError: Intenti...
+========================= 1 failed, 27 passed in 0.84s =========================
+
+Command did not exit successfully python -m pytest tests/test_data.py -v --tb=short --junitxml=reports/data_tests.xml exit status 1
+Phase complete: PRE_BUILD State: FAILED
+Phase context status code: COMMAND_EXECUTION_ERROR Message: Error while executing command: python -m pytest tests/test_data.py -v --tb=short --junitxml=reports/data_tests.xml. Reason: exit status 1
+
+No BUILD or POST_BUILD phase followed; the run went directly to FINALIZING.

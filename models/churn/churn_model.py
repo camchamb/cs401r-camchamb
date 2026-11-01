@@ -308,7 +308,7 @@ def evaluate_slices(
 def train(df: pd.DataFrame, seed: int = 42) -> tuple[xgb.Booster, dict]:
     """Train the churn model on `df` and return (booster, metrics).
 
-    TODO (Lab 4): implement this from your Lab 3 code. The usual shape:
+    This is the Lab 3 training path adapted to the Lab 4 container contract:
 
       1. X, y from FEATURE_COLUMNS and LABEL (handle missing values the way
          your Lab 3 preprocess_features() did)

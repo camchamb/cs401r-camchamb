@@ -1,0 +1,8 @@
+Experiment: northstar-churn-lab4-xops-20261031
+Experiment ID: 3
+
+mlflow.search_runs output:
+                          run_id tags.mlflow.runName params.max_depth params.eta params.num_round  metrics.auc_roc  metrics.precision_top10  metrics.recall_top10  metrics.auc_vs_baseline  metrics.lift_ci_low  metrics.lift_ci_high
+c7f1262688b44c4dbfa12db6504a354c  lab4-depth4-eta005                4       0.05              200           0.7869                   0.7167                0.3258                   0.0561               0.0377                0.0749
+17838fd2449d4bb7a2d4ec180f825e68  lab4-depth6-eta010                6        0.1              200           0.7794                   0.7133                0.3242                   0.0485               0.0300                0.0680
+e95a5636c177444b899894e58583c0e8  lab4-depth8-eta015                8       0.15              200           0.7694                   0.7100                0.3227                   0.0386               0.0186                0.0585

@@ -43,7 +43,7 @@ until [ "$(aws glue get-crawler \
 done
 echo "Crawler is READY"
 
-### Verify glue
+
 export AWS_DEFAULT_REGION=us-east-1
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -52,7 +52,6 @@ BUCKET="northstar-dev-data-${ACCOUNT_ID}"
 echo "Account: $ACCOUNT_ID"
 echo "Bucket: $BUCKET"
 
-## Run Transform Job
 
 TRANSFORM_RUN=$(aws glue start-job-run \
   --job-name northstar-dev-transform \
@@ -83,7 +82,7 @@ done
 
 aws s3 ls "s3://${BUCKET}/processed/customers/" --recursive
 
-## Run Feature Engineering Job
+
 FEATURE_RUN=$(aws glue start-job-run \
   --job-name northstar-dev-feature-engineer \
   --region us-east-1 \

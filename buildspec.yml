@@ -134,6 +134,7 @@ phases:
       # places, so its build phase would have died on the first one too
       # (defect 66).
       - export COMMIT_SHA=$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-8)
+      - export TRAINING_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
       # ── Upsert the SageMaker Pipeline ──────────────────────────────────
       # This is what used to be missing. The pipeline named here was started
@@ -160,7 +161,9 @@ phases:
         EXECUTION_ARN=$(aws sagemaker start-pipeline-execution \
           --pipeline-name ${PIPELINE_NAME} \
           --pipeline-execution-display-name "codebuild-${COMMIT_SHA}" \
-          --pipeline-parameters "Name=CommitSha,Value=${COMMIT_SHA}" \
+          --pipeline-parameters \
+            "Name=CommitSha,Value=${COMMIT_SHA}" \
+            "Name=TrainingTimestamp,Value=${TRAINING_TIMESTAMP}" \
           --query "PipelineExecutionArn" \
           --output text)
         echo "Pipeline execution started: $EXECUTION_ARN"

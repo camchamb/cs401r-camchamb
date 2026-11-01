@@ -1,0 +1,46 @@
+{
+  "ModelPackageGroupName": "northstar-churn-models",
+  "ModelPackageVersion": 8,
+  "ModelPackageRegistrationType": "Registered",
+  "ModelPackageArn": "arn:aws:sagemaker:us-east-1:061624868577:model-package/northstar-churn-models/8",
+  "CreationTime": "2026-10-31T20:34:17.843000-06:00",
+  "InferenceSpecification": {
+    "Containers": [
+      {
+        "Image": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.7-1",
+        "ImageDigest": "sha256:b4f13edb198529c460692015797fa1ca6a8ff1ed64a149297174d922121b8fc4",
+        "ModelDataUrl": "s3://northstar-dev-data-061624868577/artifacts/training/pipelines-9k0nxy9hev4l-TrainChurnModel-HPbeO5mW50/output/model.tar.gz",
+        "ModelDataETag": "a030c8873214c41b2c1b63da00c1b26d",
+        "IsCheckpoint": false
+      }
+    ],
+    "SupportedContentTypes": ["text/csv"],
+    "SupportedResponseMIMETypes": ["text/csv"]
+  },
+  "ModelPackageStatus": "Completed",
+  "ModelApprovalStatus": "PendingManualApproval",
+  "MetadataProperties": {
+    "GeneratedBy": "arn:aws:sagemaker:us-east-1:061624868577:pipeline/northstar-churn-pipeline/execution/9k0nxy9hev4l"
+  },
+  "ModelMetrics": {
+    "ModelQuality": {
+      "Statistics": {
+        "ContentType": "application/json",
+        "S3Uri": "s3://northstar-dev-data-061624868577/artifacts/evaluations/8102de59/evaluation_metrics.json"
+      }
+    }
+  },
+  "CustomerMetadataProperties": {
+    "COMMIT_SHA": "8102de59e7967e3434c4bf23cb1d9d41233c38e5",
+    "EVALUATION_METRICS_URI": "s3://northstar-dev-data-061624868577/artifacts/evaluations/8102de59/evaluation_metrics.json",
+    "TRAINING_DATA_URI": "s3://northstar-dev-data-061624868577/features/customers/",
+    "TRAINING_TIMESTAMP": "2026-11-01T02:31:45Z",
+    "auc_roc": "0.7855",
+    "auc_vs_baseline": "0.0648",
+    "lift_ci_high": "0.0839",
+    "lift_ci_low": "0.0455",
+    "precision_top10": "0.7167",
+    "recall_top10": "0.3258"
+  },
+  "SkipModelValidation": "None"
+}
