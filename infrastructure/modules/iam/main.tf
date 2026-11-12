@@ -182,6 +182,16 @@ resource "aws_iam_role_policy" "ml_engineer" {
       },
 
       {
+        Sid    = "S3DataCaptureWrite"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:AbortMultipartUpload"
+        ]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*/datacapture/*"
+      },
+
+      {
         Sid       = "PassSelfToSageMaker"
         Effect    = "Allow"
         Action    = ["iam:PassRole"]
