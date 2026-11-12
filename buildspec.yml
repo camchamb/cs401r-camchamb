@@ -84,6 +84,9 @@ phases:
       # behaviour: a CI run that cannot see the data must not report success.
       - export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - export DATA_BUCKET="${PROJECT}-${ENVIRONMENT}-data-${ACCOUNT_ID}"
+      # Git must never contribute stale snapshots to these staging directories.
+      # Recreate them so this build validates only the current objects from S3.
+      - rm -rf data/processed data/features
       - mkdir -p data/processed data/features
       - aws s3 cp "s3://${DATA_BUCKET}/raw/customers/northstar-raw-sample.csv" data/northstar-raw-sample.csv
       - aws s3 cp "s3://${DATA_BUCKET}/processed/customers/" data/processed/ --recursive --exclude "*_glue_temp*"
