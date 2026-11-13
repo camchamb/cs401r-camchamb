@@ -1,0 +1,36 @@
+{
+  "ProductionVariants": [
+    {
+      "VariantName": "champion",
+      "ModelName": "{{CHAMPION_MODEL_NAME}}",
+      "InitialInstanceCount": 1,
+      "InstanceType": "ml.t2.medium",
+      "InitialVariantWeight": 0.9
+    },
+    {
+      "VariantName": "canary",
+      "ModelName": "{{CANARY_MODEL_NAME}}",
+      "InitialInstanceCount": 1,
+      "InstanceType": "ml.t2.medium",
+      "InitialVariantWeight": 0.1
+    }
+  ],
+  "DataCaptureConfig": {
+    "EnableCapture": true,
+    "InitialSamplingPercentage": 100,
+    "DestinationS3Uri": "s3://northstar-dev-data-061624868577/datacapture/",
+    "CaptureOptions": [
+      {
+        "CaptureMode": "Input"
+      },
+      {
+        "CaptureMode": "Output"
+      }
+    ],
+    "CaptureContentTypeHeader": {
+      "CsvContentTypes": [
+        "text/csv"
+      ]
+    }
+  }
+}

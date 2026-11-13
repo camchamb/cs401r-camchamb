@@ -57,3 +57,14 @@ module "sagemaker" {
   execution_role_arn = module.iam.ml_engineer_role_arn
   instance_type      = var.sagemaker_instance_type
 }
+
+module "lambda" {
+  source                       = "../../modules/lambda"
+  project                      = var.project
+  environment                  = var.environment
+  aws_region                   = var.aws_region
+  lambda_execution_role_arn    = module.iam.data_engineer_role_arn
+  sagemaker_execution_role_arn = module.iam.ml_engineer_role_arn
+  endpoint_name                = "${var.project}-churn-prod"
+  codepipeline_name            = "${var.project}-pipeline"
+}

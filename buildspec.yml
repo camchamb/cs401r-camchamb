@@ -112,16 +112,9 @@ phases:
       # the build phase instead, against the real metrics.
 
       # ── Security Scan ──────────────────────────────────────────────────
-      # TODO: Uncomment after Lab 5 (security hardening)
-      # - bandit -r . -ll --exclude ./tests -f json -o reports/security_scan.json
-      # - cat reports/security_scan.json | python -c "
-      #     import json, sys
-      #     report = json.load(sys.stdin)
-      #     highs = [r for r in report['results'] if r['issue_severity'] == 'HIGH']
-      #     if highs:
-      #         print(f'SECURITY: {len(highs)} HIGH severity issues found')
-      #         sys.exit(1)
-      #   "
+      - echo "Running security scan"
+      - pip install --quiet bandit
+      - bandit -r models data -lll
 
       - echo "All pre-build tests passed ✓"
 
@@ -197,6 +190,15 @@ phases:
               --query "PipelineExecutionSteps[?starts_with(StepName,'RegisterChurnModel')].Metadata.RegisterModel.Arn" \
               --output text > /tmp/model_package_arn.txt
             echo "Registered: $(cat /tmp/model_package_arn.txt)"
+            # The Deploy Lambda consumes this manifest from BuildArtifact.
+            # Fail here rather than emit an unusable artifact if SageMaker did
+            # not return the package registered by this exact execution.
+            if [ ! -s /tmp/model_package_arn.txt ] || [ "$(cat /tmp/model_package_arn.txt)" = "None" ]; then
+              echo "RegisterChurnModel did not return a Model Package ARN"
+              exit 1
+            fi
+            printf '{"ModelPackageArn":"%s"}\n' "$(cat /tmp/model_package_arn.txt)" \
+              > deployment/model-package.json
             break
           elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Stopped" ]; then
             echo "Pipeline $STATUS - check SageMaker Studio for details"
@@ -342,6 +344,8 @@ reports:
 artifacts:
   files:
     - "reports/**/*"
+    - "deployment/model-package.json"
+    - "deployment/configs/endpoint-config-canary.json"
   name: "northstar-build-$(date +%Y%m%d)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
 
 cache:

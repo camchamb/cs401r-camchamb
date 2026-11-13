@@ -93,6 +93,11 @@ Parameters:
     Type: String
     Default: northstar-churn-pipeline
 
+  ModelApprovalLambda:
+    Type: String
+    Default: lambda-canary-deployment
+    Description: Name of the Terraform-managed canary Lambda
+
 # ── Resources ──────────────────────────────────────────────────────────────────
 
 Resources:
@@ -255,6 +260,10 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource: !Ref ModelApprovalTopic
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${ModelApprovalLambda}"
 
   # ── Model approval notifications ────────────────────────────────────────────
   # The ManualApproval stage below publishes here. This topic did not exist in
@@ -434,19 +443,18 @@ Resources:
 
         # Stage 4: Deploy — update Model Registry status to Approved
         # This triggers the SageMaker endpoint update (canary deployment)
-        # TODO: Implement this stage in Lab 5 (Deployment & Scaling)
-        # - Name: Deploy
-        #   Actions:
-        #     - Name: UpdateModelApproval
-        #       ActionTypeId:
-        #         Category: Invoke
-        #         Owner: AWS
-        #         Provider: Lambda
-        #         Version: "1"
-        #       Configuration:
-        #         FunctionName: !Ref ModelApprovalLambda
-        #       InputArtifacts:
-        #         - Name: BuildArtifact
+        - Name: Deploy
+          Actions:
+            - Name: UpdateModelApproval
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: Lambda
+                Version: "1"
+              Configuration:
+                FunctionName: !Ref ModelApprovalLambda
+              InputArtifacts:
+                - Name: BuildArtifact
 
 # ── Outputs ────────────────────────────────────────────────────────────────────
 

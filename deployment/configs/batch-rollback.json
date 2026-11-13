@@ -1,0 +1,8 @@
+{
+  "metric": "classification_disagreement_rate",
+  "classification_threshold": 0.5,
+  "maximum_allowed": 0.05,
+  "incumbent_model_package_version": 9,
+  "candidate_model_package_version": 10,
+  "action": "Withhold candidate output and keep incumbent output authoritative when disagreement exceeds 0.05."
+}

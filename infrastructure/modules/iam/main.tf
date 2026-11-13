@@ -346,6 +346,64 @@ resource "aws_iam_role_policy" "data_engineer" {
         Resource = "arn:aws:logs:*:*:log-group:/aws-glue/*"
       },
       {
+        Sid    = "CanaryDeployment"
+        Effect = "Allow"
+        Action = [
+          "sagemaker:CreateEndpointConfig",
+          "sagemaker:CreateModel",
+          "sagemaker:DescribeEndpoint",
+          "sagemaker:DescribeEndpointConfig",
+          "sagemaker:DescribeModel",
+          "sagemaker:DescribeModelPackage",
+          "sagemaker:UpdateModelPackage",
+          "sagemaker:UpdateEndpoint",
+          "sagemaker:UpdateEndpointWeightsAndCapacities"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ReportCodePipelineJobResult"
+        Effect = "Allow"
+        Action = [
+          "codepipeline:PutJobFailureResult",
+          "codepipeline:PutJobSuccessResult"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid       = "PassMLEngineerRoleToSageMaker"
+        Effect    = "Allow"
+        Action    = ["iam:PassRole"]
+        Resource  = aws_iam_role.ml_engineer.arn
+        Condition = { StringEquals = { "iam:PassedToService" = "sagemaker.amazonaws.com" } }
+      },
+      {
+        Sid    = "ManageCanaryRollbackSchedule"
+        Effect = "Allow"
+        Action = [
+          "scheduler:CreateSchedule",
+          "scheduler:DeleteSchedule"
+        ]
+        Resource = "arn:aws:scheduler:*:*:schedule/default/northstar-canary-rollback-*"
+      },
+      {
+        Sid       = "PassCanaryRollbackSchedulerRole"
+        Effect    = "Allow"
+        Action    = ["iam:PassRole"]
+        Resource  = "arn:aws:iam::*:role/${var.project}-${var.environment}-CanaryRollbackScheduler"
+        Condition = { StringEquals = { "iam:PassedToService" = "scheduler.amazonaws.com" } }
+      },
+      {
+        Sid    = "CanaryLambdaLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:log-group:/aws/lambda/lambda-canary-deployment:*"
+      },
+      {
         Sid      = "GlueNetworkInterfaceTags"
         Effect   = "Allow"
         Action   = ["ec2:CreateTags", "ec2:DeleteTags"]

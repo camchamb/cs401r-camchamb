@@ -51,3 +51,13 @@ output "sagemaker_domain_id" {
   description = "ID of the SageMaker Domain"
   value       = module.sagemaker.domain_id
 }
+
+output "canary_lambda_arn" {
+  description = "ARN of the canary deployment Lambda function"
+  value       = module.lambda.canary_lambda_arn
+}
+
+output "canary_lambda_name" {
+  description = "Name of the canary deployment Lambda function"
+  value       = module.lambda.canary_lambda_name
+}
