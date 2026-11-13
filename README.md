@@ -139,20 +139,3 @@ Technologies used throughout the course may include:
 * Amazon CloudWatch
 * Automated Testing
 * Model Deployment
-
-
-OUT=docs/lab5-deployment-output.txt
-EP=northstar-churn-prod
-cap () { echo; echo "===== $1  ($(date -u +%Y-%m-%dT%H:%M:%SZ)) ====="; }
-traffic () {
-  python - "$1" <<'PY'
-import boto3, collections, sys
-rt = boto3.client("sagemaker-runtime", region_name="us-east-1")
-body = open("deployment/configs/sample.csv", "rb").read()
-c = collections.Counter(
-    rt.invoke_endpoint(EndpointName="northstar-churn-prod", ContentType="text/csv",
-                       Body=body)["InvokedProductionVariant"]
-    for _ in range(int(sys.argv[1])))
-print(" / ".join(f"{k} {v}" for k, v in sorted(c.items())), f"  (n={sum(c.values())})")
-PY
-}
