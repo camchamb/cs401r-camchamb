@@ -4,14 +4,14 @@
       "VariantName": "champion",
       "ModelName": "{{CHAMPION_MODEL_NAME}}",
       "InitialInstanceCount": 1,
-      "InstanceType": "ml.t2.medium",
+      "InstanceType": "ml.m5.large",
       "InitialVariantWeight": 0.9
     },
     {
       "VariantName": "canary",
       "ModelName": "{{CANARY_MODEL_NAME}}",
       "InitialInstanceCount": 1,
-      "InstanceType": "ml.t2.medium",
+      "InstanceType": "ml.m5.large",
       "InitialVariantWeight": 0.1
     }
   ],
