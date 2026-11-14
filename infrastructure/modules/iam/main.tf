@@ -349,6 +349,7 @@ resource "aws_iam_role_policy" "data_engineer" {
         Sid    = "CanaryDeployment"
         Effect = "Allow"
         Action = [
+          "sagemaker:AddTags",
           "sagemaker:CreateEndpointConfig",
           "sagemaker:CreateModel",
           "sagemaker:DescribeEndpoint",
@@ -384,7 +385,13 @@ resource "aws_iam_role_policy" "data_engineer" {
           "scheduler:CreateSchedule",
           "scheduler:DeleteSchedule"
         ]
-        Resource = "arn:aws:scheduler:*:*:schedule/default/northstar-canary-rollback-*"
+        Resource = "arn:aws:scheduler:*:*:schedule/default/northstar-canary-decision-*"
+      },
+      {
+        Sid      = "ReadCanaryRollbackAlarm"
+        Effect   = "Allow"
+        Action   = ["cloudwatch:DescribeAlarms"]
+        Resource = "*"
       },
       {
         Sid       = "PassCanaryRollbackSchedulerRole"

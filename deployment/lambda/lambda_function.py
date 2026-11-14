@@ -55,6 +55,10 @@ ENDPOINT_NAME = os.environ["ENDPOINT_NAME"]
 SAGEMAKER_EXECUTION_ROLE_ARN = os.environ["SAGEMAKER_EXECUTION_ROLE_ARN"]
 SCHEDULER_ROLE_ARN = os.environ["SCHEDULER_ROLE_ARN"]
 CANARY_MAX_MINUTES = int(os.environ.get("CANARY_MAX_MINUTES", "60"))
+ROLLBACK_ALARM_NAME = os.environ.get(
+    "ROLLBACK_ALARM_NAME",
+    "northstar-churn-rollback-model-latency",
+)
 
 ARTIFACT_MANIFEST_PATH = "deployment/model-package.json"
 ENDPOINT_CONFIG_TEMPLATE_PATH = "deployment/configs/endpoint-config-canary.json"
@@ -62,6 +66,7 @@ ENDPOINT_CONFIG_TEMPLATE_PATH = "deployment/configs/endpoint-config-canary.json"
 sagemaker = boto3.client("sagemaker", region_name=REGION)
 codepipeline = boto3.client("codepipeline", region_name=REGION)
 scheduler = boto3.client("scheduler", region_name=REGION)
+cloudwatch = boto3.client("cloudwatch", region_name=REGION)
 
 
 def _safe_name(value: str, max_length: int = 63) -> str:
@@ -266,20 +271,24 @@ def _create_endpoint_config(config: dict) -> None:
     )
 
 
-def _schedule_rollback(function_arn: str, schedule_suffix: str) -> tuple[str, str]:
-    """Schedule a one-time rollback so a canary cannot run past its limit."""
-    rollback_at = datetime.now(timezone.utc) + timedelta(
+def _schedule_canary_decision(
+    function_arn: str,
+    schedule_suffix: str,
+    candidate_model_name: str,
+) -> tuple[str, str]:
+    """Schedule a one-time promotion-or-rollback decision."""
+    decision_at = datetime.now(timezone.utc) + timedelta(
         minutes=CANARY_MAX_MINUTES
     )
-    schedule_name = f"northstar-canary-rollback-{schedule_suffix}"[:64]
+    schedule_name = f"northstar-canary-decision-{schedule_suffix}"[:64]
 
     scheduler.create_schedule(
         Name=schedule_name,
         Description=(
-            f"Roll back {ENDPOINT_NAME} after the {CANARY_MAX_MINUTES}-minute "
-            "canary window."
+            f"Promote or roll back {ENDPOINT_NAME} after its "
+            f"{CANARY_MAX_MINUTES}-minute canary window."
         ),
-        ScheduleExpression=f"at({rollback_at.strftime('%Y-%m-%dT%H:%M:%S')})",
+        ScheduleExpression=f"at({decision_at.strftime('%Y-%m-%dT%H:%M:%S')})",
         ScheduleExpressionTimezone="UTC",
         FlexibleTimeWindow={"Mode": "OFF"},
         ActionAfterCompletion="DELETE",
@@ -287,8 +296,10 @@ def _schedule_rollback(function_arn: str, schedule_suffix: str) -> tuple[str, st
             "Arn": function_arn,
             "RoleArn": SCHEDULER_ROLE_ARN,
             "Input": json.dumps({
-                "action": "rollback",
+                "action": "evaluate_canary",
                 "endpointName": ENDPOINT_NAME,
+                "candidateModelName": candidate_model_name,
+                "alarmName": ROLLBACK_ALARM_NAME,
                 "scheduleName": schedule_name,
             }),
             "RetryPolicy": {
@@ -297,7 +308,7 @@ def _schedule_rollback(function_arn: str, schedule_suffix: str) -> tuple[str, st
             },
         },
     )
-    return schedule_name, rollback_at.isoformat()
+    return schedule_name, decision_at.isoformat()
 
 
 def _rollback_canary(endpoint_name: str) -> dict:
@@ -319,6 +330,116 @@ def _rollback_canary(endpoint_name: str) -> dict:
     }
 
 
+def _alarm_state(alarm_name: str) -> str:
+    response = cloudwatch.describe_alarms(AlarmNames=[alarm_name])
+    alarms = response.get("MetricAlarms", [])
+    if len(alarms) != 1:
+        logger.warning("Rollback alarm %s was not found.", alarm_name)
+        return "MISSING"
+    return alarms[0]["StateValue"]
+
+
+def _promotion_data_capture(config: dict) -> dict | None:
+    """Copy only CreateEndpointConfig-compatible data capture fields."""
+    capture = config.get("DataCaptureConfig")
+    if not capture:
+        return None
+    allowed = {
+        "EnableCapture",
+        "InitialSamplingPercentage",
+        "DestinationS3Uri",
+        "KmsKeyId",
+        "CaptureOptions",
+        "CaptureContentTypeHeader",
+    }
+    return {key: value for key, value in capture.items() if key in allowed}
+
+
+def _promote_candidate(
+    endpoint_name: str,
+    candidate_model_name: str,
+    promotion_suffix: str,
+) -> dict:
+    endpoint = sagemaker.describe_endpoint(EndpointName=endpoint_name)
+    if endpoint["EndpointStatus"] != "InService":
+        raise RuntimeError(
+            f"Endpoint {endpoint_name} is {endpoint['EndpointStatus']}; "
+            "cannot make the canary decision yet."
+        )
+
+    current_config = sagemaker.describe_endpoint_config(
+        EndpointConfigName=endpoint["EndpointConfigName"]
+    )
+    canary = next(
+        (
+            variant
+            for variant in current_config["ProductionVariants"]
+            if variant["VariantName"] == "canary"
+        ),
+        None,
+    )
+    if canary is None or canary["ModelName"] != candidate_model_name:
+        raise RuntimeError(
+            "The live canary does not match the candidate scheduled for promotion."
+        )
+
+    promotion_config_name = (
+        f"northstar-churn-promoted-{promotion_suffix}"[:63]
+    )
+    promotion_config = {
+        "EndpointConfigName": promotion_config_name,
+        "ProductionVariants": [{
+            "VariantName": "champion",
+            "ModelName": candidate_model_name,
+            "InitialInstanceCount": canary["InitialInstanceCount"],
+            "InstanceType": canary["InstanceType"],
+            "InitialVariantWeight": 1.0,
+        }],
+    }
+    data_capture = _promotion_data_capture(current_config)
+    if data_capture:
+        promotion_config["DataCaptureConfig"] = data_capture
+
+    _create_endpoint_config(promotion_config)
+    sagemaker.update_endpoint(
+        EndpointName=endpoint_name,
+        EndpointConfigName=promotion_config_name,
+    )
+    logger.info(
+        "Promoted candidate model %s to champion on endpoint %s.",
+        candidate_model_name,
+        endpoint_name,
+    )
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "message": "Canary promoted to champion.",
+            "endpoint": endpoint_name,
+            "championModel": candidate_model_name,
+            "endpointConfig": promotion_config_name,
+        }),
+    }
+
+
+def _evaluate_canary(event: dict) -> dict:
+    endpoint_name = event.get("endpointName", ENDPOINT_NAME)
+    alarm_name = event.get("alarmName", ROLLBACK_ALARM_NAME)
+    state = _alarm_state(alarm_name)
+    if state == "OK":
+        return _promote_candidate(
+            endpoint_name=endpoint_name,
+            candidate_model_name=event["candidateModelName"],
+            promotion_suffix=_safe_name(event.get("scheduleName", "scheduled")),
+        )
+
+    logger.warning(
+        "Canary was not promoted because alarm %s is %s; rolling back.",
+        alarm_name,
+        state,
+    )
+    return _rollback_canary(endpoint_name)
+
+
 def lambda_handler(event, context):
     """
     CodePipeline Lambda action handler.
@@ -329,6 +450,8 @@ def lambda_handler(event, context):
     """
     if event.get("action") == "rollback":
         return _rollback_canary(event.get("endpointName", ENDPOINT_NAME))
+    if event.get("action") == "evaluate_canary":
+        return _evaluate_canary(event)
 
     job_id = event["CodePipeline.job"]["id"]
 
@@ -378,7 +501,11 @@ def lambda_handler(event, context):
         function_arn = getattr(context, "invoked_function_arn", "")
         if not function_arn:
             raise RuntimeError("Lambda invocation did not include a function ARN.")
-        schedule_name, rollback_at = _schedule_rollback(function_arn, suffix)
+        schedule_name, decision_at = _schedule_canary_decision(
+            function_arn,
+            suffix,
+            candidate_model_name,
+        )
 
         try:
             sagemaker.update_endpoint(
@@ -391,11 +518,11 @@ def lambda_handler(event, context):
 
         logger.info(
             "Started canary deployment for endpoint %s using config %s; "
-            "rollback schedule %s runs at %s.",
+            "promotion-or-rollback schedule %s runs at %s.",
             ENDPOINT_NAME,
             endpoint_config_name,
             schedule_name,
-            rollback_at,
+            decision_at,
         )
 
         codepipeline.put_job_success_result(
@@ -404,7 +531,7 @@ def lambda_handler(event, context):
                 "summary": (
                     f"Canary endpoint update started. Champion={champion_model_name}; "
                     f"candidate={candidate_model_name}; endpoint config={endpoint_config_name}; "
-                    f"automatic rollback at {rollback_at}."
+                    f"automatic canary decision at {decision_at}."
                 ),
                 "externalExecutionId": getattr(context, "aws_request_id", "unknown"),
             },
@@ -418,8 +545,8 @@ def lambda_handler(event, context):
                 "championModel": champion_model_name,
                 "candidateModel": candidate_model_name,
                 "endpointConfig": endpoint_config_name,
-                "rollbackSchedule": schedule_name,
-                "rollbackAt": rollback_at,
+                "decisionSchedule": schedule_name,
+                "decisionAt": decision_at,
             }),
         }
 

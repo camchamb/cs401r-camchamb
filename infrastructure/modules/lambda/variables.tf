@@ -40,3 +40,9 @@ variable "canary_max_minutes" {
   type        = number
   default     = 60
 }
+
+variable "rollback_alarm_name" {
+  description = "CloudWatch alarm that must be OK before the canary is promoted"
+  type        = string
+  default     = "northstar-churn-rollback-model-latency"
+}

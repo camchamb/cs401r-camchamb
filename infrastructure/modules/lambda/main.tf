@@ -27,12 +27,13 @@ resource "aws_lambda_function" "canary_deployment" {
       SAGEMAKER_EXECUTION_ROLE_ARN = var.sagemaker_execution_role_arn
       SCHEDULER_ROLE_ARN           = aws_iam_role.rollback_scheduler.arn
       CANARY_MAX_MINUTES           = tostring(var.canary_max_minutes)
+      ROLLBACK_ALARM_NAME          = var.rollback_alarm_name
     }
   }
 }
 
-# EventBridge Scheduler assumes this role for the one-time, 60-minute rollback
-# invocation. The schedule deletes itself after it runs.
+# EventBridge Scheduler assumes this role for the one-time, 60-minute
+# promotion-or-rollback decision. The schedule deletes itself after it runs.
 resource "aws_iam_role" "rollback_scheduler" {
   name = "${var.project}-${var.environment}-CanaryRollbackScheduler"
 
