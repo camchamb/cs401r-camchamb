@@ -88,3 +88,8 @@ northstar-ci-build-failure	FailedBuilds	1.0	OK
 
 ===== 11. Dashboard  (2026-11-24T19:40:54Z) =====
 NorthStar-AI-Platform	2026-11-24T11:56:29-07:00
+
+===== 12. After teardown: live API  (2026-11-24T23:40:56Z) =====
+endpoints:               0
+running processing jobs: 0
+northstar alarms:        0
