@@ -113,9 +113,15 @@ def drift_direction(method: str, value: float, threshold: float) -> bool:
     run_evidently_job.py refuses to launch while this function still raises
     NotImplementedError.
     """
-    raise NotImplementedError(
-        "drift_direction() is not implemented -- see the TODO in "
-        "monitoring/evidently_drift.py")
+    normalized_method = method.strip().lower()
+    if normalized_method == "psi":
+        return value > threshold
+    if normalized_method == "ks":
+        return value < threshold
+    raise ValueError(
+        f"unsupported drift test {method!r}; add its threshold direction to "
+        "drift_direction() before adding it to DRIFT_PLAN"
+    )
 
 
 def load_baseline(path: str) -> pd.DataFrame:

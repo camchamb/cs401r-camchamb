@@ -1,0 +1,10 @@
+{
+  "endpoint": "northstar-churn-prod",
+  "variant": "champion",
+  "request_count": 800,
+  "distinct_payloads": 800,
+  "alert_threshold": 0.5,
+  "churn_alert_volume": 182,
+  "prediction_min": 0.29976657032966614,
+  "prediction_max": 0.6930192112922668
+}

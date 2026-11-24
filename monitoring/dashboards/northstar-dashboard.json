@@ -1,0 +1,108 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 2,
+      "properties": {
+        "markdown": "# NorthStar AI Platform\nFive-layer production monitoring for `northstar-churn-prod`."
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 2,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Infrastructure — endpoint CPU and memory",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "period": 300,
+        "stat": "Average",
+        "yAxis": { "left": { "min": 0 } },
+        "metrics": [
+          [ "/aws/sagemaker/Endpoints", "CPUUtilization", "EndpointName", "northstar-churn-prod", "VariantName", "champion", { "label": "CPU champion" } ],
+          [ ".", "MemoryUtilization", ".", ".", ".", ".", { "label": "Memory champion" } ],
+          [ ".", "CPUUtilization", ".", ".", ".", "canary", { "label": "CPU canary" } ],
+          [ ".", "MemoryUtilization", ".", ".", ".", ".", { "label": "Memory canary" } ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 2,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Pipeline — Glue failed tasks",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "period": 300,
+        "stat": "Maximum",
+        "metrics": [
+          [ "Glue", "glue.driver.aggregate.numFailedTasks", "JobName", "northstar-dev-transform", "JobRunId", "ALL", "Type", "gauge", { "label": "Transform failed tasks" } ],
+          [ ".", ".", ".", "northstar-dev-feature-engineer", ".", ".", ".", ".", { "label": "Feature job failed tasks" } ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 8,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Model — Evidently drift",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "period": 300,
+        "stat": "Maximum",
+        "yAxis": { "left": { "min": 0, "max": 1 } },
+        "metrics": [
+          [ "NorthStar/ChurnModel", "DriftDetected", "EndpointName", "northstar-churn-prod", { "label": "Drift detected" } ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 8,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Application — inference latency percentiles",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "period": 300,
+        "yAxis": { "left": { "min": 0, "label": "microseconds" } },
+        "metrics": [
+          [ "AWS/SageMaker", "ModelLatency", "EndpointName", "northstar-churn-prod", "VariantName", "champion", { "stat": "p50", "label": "p50" } ],
+          [ "...", { "stat": "p95", "label": "p95" } ],
+          [ "...", { "stat": "p99", "label": "p99" } ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 8,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Business — daily churn alert volume",
+        "region": "us-east-1",
+        "view": "timeSeries",
+        "period": 3600,
+        "stat": "Maximum",
+        "yAxis": { "left": { "min": 0 } },
+        "metrics": [
+          [ "NorthStar/ChurnModel", "ChurnAlertVolume", "EndpointName", "northstar-churn-prod", { "label": "Churn alerts" } ]
+        ]
+      }
+    }
+  ]
+}

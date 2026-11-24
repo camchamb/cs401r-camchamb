@@ -139,3 +139,57 @@ Technologies used throughout the course may include:
 * Amazon CloudWatch
 * Automated Testing
 * Model Deployment
+
+
+
+{
+  echo "Lab 6 monitoring evidence - account $ACCT"
+  cap "1. Endpoint, variants, data capture"
+  aws sagemaker describe-endpoint --endpoint-name $EP \
+    --query '{Status:EndpointStatus,Config:EndpointConfigName,Variants:ProductionVariants[].{Name:VariantName,Weight:CurrentWeight},Capture:DataCaptureConfig}'
+  cap "2. Captured objects per variant"
+  for v in champion canary; do
+    echo "$v: $(aws s3 ls s3://$B/datacapture/$EP/$v/ --recursive | wc -l | tr -d ' ') files"
+  done
+  cap "3. Baseline in S3"
+  aws s3 ls s3://$B/monitoring/baseline/
+  cap "4. Drift jobs"
+  for j in $(aws sagemaker list-processing-jobs --name-contains nsc-evidently \
+               --query 'ProcessingJobSummaries[].ProcessingJobName' --output text); do
+    aws sagemaker describe-processing-job --processing-job-name $j \
+      --query '{Job:ProcessingJobName,Status:ProcessingJobStatus,Role:RoleArn,Instance:ProcessingResources.ClusterConfig.InstanceType,Start:ProcessingStartTime,End:ProcessingEndTime}'
+  done
+  cap "5. Business layer: custom metric"
+  aws cloudwatch get-metric-statistics --namespace $NS --metric-name ChurnAlertVolume \
+    --dimensions Name=EndpointName,Value=$EP \
+    --start-time $S --end-time $E --period 3600 --statistics Maximum
+  cap "6. Model layer: drift metric"
+  aws cloudwatch get-metric-statistics --namespace $NS --metric-name DriftDetected \
+    --dimensions Name=EndpointName,Value=$EP \
+    --start-time $S --end-time $E --period 300 --statistics Maximum \
+    --query 'Datapoints[].[Timestamp,Maximum]' --output text
+  cap "7. Pipeline layer: recent Glue job runs"
+  for j in northstar-dev-transform northstar-dev-feature-engineer; do
+    aws glue get-job-runs --job-name $j \
+      --query 'JobRuns[:3].[JobName,StartedOn,JobRunState,ExecutionTime]' --output text
+  done
+  cap "8. Application layer: ModelLatency p50/p95/p99 on champion (MICROSECONDS)"
+  aws cloudwatch get-metric-statistics --namespace AWS/SageMaker --metric-name ModelLatency \
+    --dimensions Name=EndpointName,Value=$EP Name=VariantName,Value=champion \
+    --start-time $S --end-time $E --period 3600 --extended-statistics p50 p95 p99 \
+    --query 'Datapoints[].[Timestamp,ExtendedStatistics.p50,ExtendedStatistics.p95,ExtendedStatistics.p99]' --output text
+  cap "9. Infrastructure layer: CPU and memory on champion (last 30 min, 5-min averages)"
+  for m in CPUUtilization MemoryUtilization; do
+    echo "-- $m"
+    aws cloudwatch get-metric-statistics --namespace /aws/sagemaker/Endpoints --metric-name $m \
+      --dimensions Name=EndpointName,Value=$EP Name=VariantName,Value=champion \
+      --start-time $S --end-time $E --period 300 --statistics Average \
+      --query 'sort_by(Datapoints,&Timestamp)[-6:].[Timestamp,Average]' --output text
+  done
+  cap "10. Alarms: threshold and state"
+  aws cloudwatch describe-alarms \
+    --query 'MetricAlarms[?contains(AlarmName,`northstar`)].[AlarmName,MetricName,Threshold,StateValue]' --output text
+  cap "11. Dashboard"
+  aws cloudwatch list-dashboards --dashboard-name-prefix NorthStar-AI-Platform \
+    --query 'DashboardEntries[].[DashboardName,LastModified]' --output text
+} 2>&1 | tee "$OUT"

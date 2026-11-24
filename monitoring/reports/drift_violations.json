@@ -1,0 +1,63 @@
+{
+  "baseline_records": 9999,
+  "captured_records": 800,
+  "features_evaluated": 5,
+  "underpowered_window": false,
+  "drift_detected": true,
+  "violation_count": 3,
+  "violations": [
+    {
+      "feature": "avg_order_value",
+      "method": "psi",
+      "value": 0.26514967023890784,
+      "threshold": 0.2,
+      "detail": "PSI 0.2651 > 0.2"
+    },
+    {
+      "feature": "category_diversity_score",
+      "method": "ks",
+      "value": 0.0003247628757997416,
+      "threshold": 0.05,
+      "detail": "KS 0.0003 < 0.05"
+    },
+    {
+      "feature": "total_spend_90d",
+      "method": "ks",
+      "value": 8.0317028642997e-33,
+      "threshold": 0.05,
+      "detail": "KS 0.0000 < 0.05"
+    }
+  ],
+  "per_feature": {
+    "days_since_last_purchase": {
+      "method": "psi",
+      "threshold": 0.2,
+      "value": 0.1877770689878127,
+      "drifted": false
+    },
+    "purchase_frequency_30d": {
+      "method": "psi",
+      "threshold": 0.2,
+      "value": 0.12527157342217723,
+      "drifted": false
+    },
+    "avg_order_value": {
+      "method": "psi",
+      "threshold": 0.2,
+      "value": 0.26514967023890784,
+      "drifted": true
+    },
+    "category_diversity_score": {
+      "method": "ks",
+      "threshold": 0.05,
+      "value": 0.0003247628757997416,
+      "drifted": true
+    },
+    "total_spend_90d": {
+      "method": "ks",
+      "threshold": 0.05,
+      "value": 8.0317028642997e-33,
+      "drifted": true
+    }
+  }
+}

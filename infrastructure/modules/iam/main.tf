@@ -210,6 +210,16 @@ resource "aws_iam_role_policy" "ml_engineer" {
       },
 
       {
+        Sid      = "EndpointInstanceMetrics"
+        Effect   = "Allow"
+        Action   = ["cloudwatch:PutMetricData"]
+        Resource = "*"
+        Condition = {
+          StringEquals = { "cloudwatch:namespace" = "/aws/sagemaker/Endpoints" }
+        }
+      },
+
+      {
         Sid    = "CloudWatchLogs"
         Effect = "Allow"
 
@@ -284,7 +294,8 @@ resource "aws_iam_role_policy" "data_engineer" {
           "arn:aws:s3:::${var.project}-${var.environment}-data-*/raw/*",
           "arn:aws:s3:::${var.project}-${var.environment}-data-*/processed/*",
           "arn:aws:s3:::${var.project}-${var.environment}-data-*/features/*",
-          # Spark creates this legacy S3 directory marker beside the features/ prefix.
+          # Spark creates these legacy S3 directory markers beside the output prefixes.
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/processed_$folder$",
           "arn:aws:s3:::${var.project}-${var.environment}-data-*/features_$folder$"
         ]
       },
@@ -394,6 +405,15 @@ resource "aws_iam_role_policy" "data_engineer" {
         Resource = "*"
       },
       {
+        Sid      = "GlueJobMetrics"
+        Effect   = "Allow"
+        Action   = ["cloudwatch:PutMetricData"]
+        Resource = "*"
+        Condition = {
+          StringEquals = { "cloudwatch:namespace" = "Glue" }
+        }
+      },
+      {
         Sid       = "PassCanaryRollbackSchedulerRole"
         Effect    = "Allow"
         Action    = ["iam:PassRole"]
@@ -486,4 +506,83 @@ resource "aws_iam_role_policy" "model_monitor" {
       }
     ]
   })
+}
+
+# ── ModelMonitorExecution (Lab 6) ────────────────────────────────────────────
+resource "aws_iam_role" "model_monitor_execution" {
+  name = "${var.project}-${var.environment}-ModelMonitorExecution"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "sagemaker.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-ModelMonitorExecution"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+resource "aws_iam_policy" "model_monitor_execution" {
+  name        = "${var.project}-${var.environment}-ModelMonitorExecutionPolicy"
+  description = "Evidently drift job: pull the sklearn image, read datacapture and monitoring, write monitoring reports"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ECRPullProcessingImage"
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid      = "S3BucketList"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket", "s3:GetBucketLocation"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*"
+      },
+      {
+        Sid    = "ReadCaptureBaselineAndCode"
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = [
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/datacapture/*",
+          "arn:aws:s3:::${var.project}-${var.environment}-data-*/monitoring/*"
+        ]
+      },
+      {
+        Sid      = "WriteMonitoringReports"
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:AbortMultipartUpload"]
+        Resource = "arn:aws:s3:::${var.project}-${var.environment}-data-*/monitoring/*"
+      },
+      {
+        Sid    = "CloudWatchLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = "arn:aws:logs:*:*:log-group:/aws/sagemaker/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "model_monitor_execution" {
+  role       = aws_iam_role.model_monitor_execution.name
+  policy_arn = aws_iam_policy.model_monitor_execution.arn
 }

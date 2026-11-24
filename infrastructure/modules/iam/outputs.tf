@@ -12,3 +12,8 @@ output "model_monitor_role_arn" {
   description = "ARN of the ModelMonitor role for SageMaker monitoring"
   value       = aws_iam_role.model_monitor.arn
 }
+
+output "model_monitor_execution_role_arn" {
+  description = "ARN of the ModelMonitorExecution role used by the Lab 6 Evidently processing job"
+  value       = aws_iam_role.model_monitor_execution.arn
+}

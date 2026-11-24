@@ -1,0 +1,7 @@
+Experiment: northstar-drift
+Experiment ID: 4
+Logged run ID: 5d378e5ecaa3473cb314a3b8af11a759
+
+mlflow.search_runs output:
+                          run_id            tags.mlflow.runName   status    params.processing_job params.variant params.baseline_records params.captured_records params.underpowered_window  metrics.violation_count  metrics.psi_days_since_last_purchase  metrics.psi_purchase_frequency_30d  metrics.psi_avg_order_value  metrics.ks_category_diversity_score  metrics.ks_total_spend_90d
+5d378e5ecaa3473cb314a3b8af11a759 drift-nsc-evidently-1795546219 FINISHED nsc-evidently-1795546219       champion                    9999                     800                      False                      3.0                              0.187777                            0.125272                      0.26515                             0.000325                8.031703e-33
